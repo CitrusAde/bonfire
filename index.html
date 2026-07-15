@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>bonfire - Survive Until Dawn</title>
+  <title>bonfire - Survive Until Dawn (Audio Version)</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -10,23 +10,15 @@
       font-family: 'Malgun Gothic', sans-serif;
       display: flex; justify-content: center; align-items: center;
       height: 100vh; overflow: hidden; user-select: none;
-      cursor: crosshair; /* 기본 커서 조준선 */
+      cursor: crosshair;
     }
 
-    /* 980x540 메인 게임판 */
     #game-container {
-      width: 980px; height: 540px;
-      position: relative; overflow: hidden;
-      border: 4px solid #1c1815;
-      box-shadow: 0 0 50px rgba(0,0,0,0.95);
-      
-      /* [★ 이미지 교체 구역 1: 배경 이미지 ★] */
+      width: 980px; height: 540px; position: relative; overflow: hidden;
+      border: 4px solid #1c1815; box-shadow: 0 0 50px rgba(0,0,0,0.95);
       background-color: #0c0908;
-      /* background-image: url('forest_bg.png'); */
-      background-size: cover; background-position: center;
     }
 
-    /* 화면 진동 효과 (공격받을 때) */
     .shake { animation: shake-anim 0.4s both; }
     @keyframes shake-anim {
       0%, 100% { transform: translate(0, 0); }
@@ -34,15 +26,12 @@
       40%, 80% { transform: translate(10px, -6px); }
     }
 
-    /* 마우스 손전등 효과 (커서를 따라다니는 시야 빛) */
     #flashlight {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 5;
-      /* 마우스 위치를 중심으로 밝고, 주변은 칠흑 같이 어두운 그라데이션 */
       background: radial-gradient(circle 140px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 50%, rgba(5,4,4,0.95) 85%);
     }
 
-    /* 상단 UI 바 */
     #ui-bar {
       position: absolute; top: 15px; left: 20px; right: 20px;
       display: flex; justify-content: space-between; align-items: center;
@@ -53,55 +42,36 @@
     #fuel-bar { width: 100%; height: 100%; background: #ff5500; transition: width 0.2s; }
     .clock { font-size: 24px; color: #ffcc00; font-family: monospace; }
 
-    /* [★ 이미지 교체 구역 2: 중앙 모닥불 ★] */
     #bonfire {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100px; height: 100px; z-index: 2;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 70px; cursor: pointer;
-      /* background-image: url('bonfire.png'); */
-      background-size: contain; background-repeat: no-repeat;
-      filter: drop-shadow(0 0 30px rgba(255, 85, 0, 0.9));
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 100px; height: 100px; z-index: 2; display: flex; justify-content: center; align-items: center;
+      font-size: 70px; cursor: pointer; filter: drop-shadow(0 0 30px rgba(255, 85, 0, 0.9));
       transition: transform 0.1s;
     }
     #bonfire:active { transform: translate(-50%, -50%) scale(0.95); }
 
-    /* [★ 이미지 교체 구역 3: 장작 더미 (우측 하단) ★] */
     #wood-pile {
-      position: absolute; bottom: 20px; right: 30px;
-      width: 80px; height: 80px; z-index: 6;
+      position: absolute; bottom: 20px; right: 30px; width: 80px; height: 80px; z-index: 6;
       background-color: #2b1f17; border: 2px solid #543d2b; border-radius: 10px;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      cursor: pointer; font-size: 32px; box-shadow: 0 0 15px rgba(0,0,0,0.8);
-      transition: all 0.15s;
+      cursor: pointer; font-size: 32px; box-shadow: 0 0 15px rgba(0,0,0,0.8); transition: all 0.15s;
     }
     #wood-pile:hover { background-color: #3d2c20; transform: scale(1.05); }
-    #wood-pile:active { transform: scale(0.95); }
     #wood-label { font-size: 12px; color: #aaa; margin-top: 4px; }
 
-    /* 마우스로 장작을 들고 있을 때 마우스 옆에 붙는 아이콘 */
     #holding-icon {
       position: absolute; pointer-events: none; z-index: 20;
       font-size: 36px; display: none; transform: translate(-50%, -50%);
       filter: drop-shadow(0 0 10px #000);
     }
 
-    /* [★ 이미지 교체 구역 4: 다가오는 귀신/괴물 ★] */
     .monster {
-      position: absolute; width: 60px; height: 60px;
-      z-index: 3; pointer-events: none;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 40px;
-      /* background-image: url('ghost.png'); */
-      background-size: contain; background-repeat: no-repeat;
-      filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8));
-      transition: filter 0.1s;
+      position: absolute; width: 60px; height: 60px; z-index: 3; pointer-events: none;
+      display: flex; justify-content: center; align-items: center; font-size: 40px;
+      filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8)); transition: filter 0.1s;
     }
-    /* 손전등 빛을 받아 타들어 갈 때의 효과 */
     .burning { filter: drop-shadow(0 0 25px rgba(255, 255, 255, 1)) brightness(2); }
 
-    /* 오버레이 창 (시작/결과) */
     .overlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(5, 4, 4, 0.95); z-index: 30;
@@ -121,10 +91,7 @@
 <body>
 
 <div id="game-container">
-  <!-- 손전등 시야 영역 -->
   <div id="flashlight"></div>
-  
-  <!-- 상단 상태바 -->
   <div id="ui-bar">
     <div class="fuel-meter">
       <span>🔥 모닥불:</span>
@@ -133,29 +100,21 @@
     <div class="clock" id="clock-display">04:00 AM</div>
   </div>
 
-  <!-- 중앙 모닥불 -->
   <div id="bonfire" onclick="feedFire()">🔥</div>
-
-  <!-- 우측 하단 장작 더미 -->
-  <div id="wood-pile" onclick="grabWood()">
-    🪵<span id="wood-label">장작 집기</span>
-  </div>
-
-  <!-- 마우스 커서에 붙는 장작 아이콘 -->
+  <div id="wood-pile" onclick="grabWood()">🪵<span id="wood-label">장작 집기</span></div>
   <div id="holding-icon">🪵</div>
 
-  <!-- 시작 화면 -->
   <div id="start-screen" class="overlay">
     <h1>bonfire : 새벽까지</h1>
     <p>
-      1. 마우스 커서가 곧 <b>[손전등 빛]</b>입니다. 어둠 속에서 다가오는 귀신에게 빛을 계속 비춰 태워버리세요!<br>
-      2. 모닥불이 꺼지면 죽습니다. 우측 하단 <b>[🪵장작]</b>을 클릭해 쥐고, <b>[🔥모닥불]</b>에 던져 넣으세요!<br>
-      3. 아침(06:00 AM)이 될 때까지 살아남으면 승리합니다.
+      <b>🔊 스피커 소리를 켜주세요! (실시간 ASMR 사운드 지원)</b><br><br>
+      1. 마우스 커서(손전등 빛)로 어둠 속에서 다가오는 귀신을 비춰 지져버리세요!<br>
+      2. 모닥불이 꺼지면 죽습니다. 우측 하단 <b>[🪵장작]</b>을 집어 <b>[🔥모닥불]</b>에 던지세요!<br>
+      3. 아침(06:00 AM)까지 생존하면 승리합니다.
     </p>
     <button class="btn" onclick="startGame()">어둠 속으로 (게임 시작)</button>
   </div>
 
-  <!-- 게임 오버 / 클리어 화면 -->
   <div id="end-screen" class="overlay hidden">
     <h1 id="end-title">GAME OVER</h1>
     <p id="end-desc">모닥불이 꺼지고 어둠이 당신을 집어삼켰습니다.</p>
@@ -164,6 +123,150 @@
 </div>
 
 <script>
+  /* =========================================================
+     ★ Web Audio API 실시간 사운드 생성 엔진 (No Assets!) ★
+     ========================================================= */
+  let audioCtx = null;
+  let windOsc = null;
+  let windGain = null;
+  let isBurningSoundPlaying = false;
+
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  // 1. 스산한 배경 바람 소리 (드론 BGM)
+  function startWindBGM() {
+    if (windOsc) return;
+    windOsc = audioCtx.createOscillator();
+    windGain = audioCtx.createGain();
+    
+    windOsc.type = 'sawtooth';
+    windOsc.frequency.setValueAtTime(45, audioCtx.currentTime); // 낮은 저주파
+    
+    // 필터를 걸어 웅웅거리는 바람 소리로 변조
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(120, audioCtx.currentTime);
+    
+    windGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    
+    windOsc.connect(filter);
+    filter.connect(windGain);
+    windGain.connect(audioCtx.destination);
+    windOsc.start();
+  }
+
+  function stopWindBGM() {
+    if (windOsc) {
+      windOsc.stop();
+      windOsc.disconnect();
+      windOsc = null;
+    }
+  }
+
+  // 2. 모닥불 타닥거리는 ASMR 효과음 (랜덤 파열음)
+  function playCrackling() {
+    if (!audioCtx || !gameActive) return;
+    
+    // 백색 소음(Noise) 생성
+    const bufferSize = audioCtx.sampleRate * 0.05; // 0.05초 아주 짧은 소리
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(800 + Math.random() * 1000, audioCtx.currentTime);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start();
+  }
+
+  // 3. 장작을 불에 넣었을 때 화르륵! 소리 (Whoosh)
+  function playFireWhoosh() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+    
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+
+  // 4. 귀신이 손전등 빛에 지져질 때 소리 (Sizzle / Hiss)
+  function playGhostSizzle() {
+    if (!audioCtx || isBurningSoundPlaying) return;
+    isBurningSoundPlaying = true;
+
+    const bufferSize = audioCtx.sampleRate * 0.1;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(2500, audioCtx.currentTime); // 날카로운 치이익 소리
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start();
+
+    setTimeout(() => { isBurningSoundPlaying = false; }, 100);
+  }
+
+  // 5. 게임오버 충격음
+  function playGameOverSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.8);
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.8);
+  }
+
+
+  /* =========================================================
+     ★ 메인 게임 로직 ★
+     ========================================================= */
   const container = document.getElementById("game-container");
   const flashlight = document.getElementById("flashlight");
   const holdingIcon = document.getElementById("holding-icon");
@@ -173,22 +276,20 @@
 
   let gameActive = false;
   let fuel = 100;
-  let timeMinutes = 4 * 60; // 04:00 AM (240분)
+  let timeMinutes = 4 * 60;
   let holdingWood = false;
   let monsters = [];
   let mouseX = 490, mouseY = 270;
   
   let spawnTimer = null;
   let clockTimer = null;
+  let asmrTimer = null;
   let loopId = null;
 
-  /* --- [마우스 손전등 & 장작 위치 추적] --- */
   container.addEventListener("mousemove", (e) => {
     const rect = container.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
     mouseY = e.clientY - rect.top;
-
-    // 손전등 시야 마스크 중심점 이동
     flashlight.style.background = `radial-gradient(circle 140px at ${mouseX}px ${mouseY}px, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 50%, rgba(5,4,4,0.96) 85%)`;
 
     if (holdingWood) {
@@ -197,7 +298,6 @@
     }
   });
 
-  /* --- [장작 집기 & 모닥불에 넣기 액션] --- */
   function grabWood() {
     if (!gameActive) return;
     holdingWood = true;
@@ -210,45 +310,35 @@
     if (!gameActive || !holdingWood) return;
     holdingWood = false;
     holdingIcon.style.display = "none";
-    
-    // 연료 회복 (최대 100)
     fuel = Math.min(100, fuel + 35);
     updateUI();
     
-    // 불꽃이 커지는 연출
+    playFireWhoosh(); // ★ 장작 넣는 소리 재생!
+
     bonfire.style.transform = "translate(-50%, -50%) scale(1.3)";
     setTimeout(() => bonfire.style.transform = "translate(-50%, -50%) scale(1)", 150);
   }
 
-  /* --- [귀신/괴물 스폰 로직] --- */
   function spawnMonster() {
     if (!gameActive) return;
-    
-    // 980x540 테두리 바깥의 랜덤한 위치에서 생성
     let x, y;
     const edge = Math.floor(Math.random() * 4);
-    if (edge === 0) { x = Math.random() * 980; y = -50; }        // 위
-    else if (edge === 1) { x = 980 + 50; y = Math.random() * 540; } // 오른쪽
-    else if (edge === 2) { x = Math.random() * 980; y = 540 + 50; } // 아래
-    else { x = -50; y = Math.random() * 540; }                      // 왼쪽
+    if (edge === 0) { x = Math.random() * 980; y = -50; }
+    else if (edge === 1) { x = 980 + 50; y = Math.random() * 540; }
+    else if (edge === 2) { x = Math.random() * 980; y = 540 + 50; }
+    else { x = -50; y = Math.random() * 540; }
 
     const el = document.createElement("div");
     el.className = "monster";
-    el.innerText = "👀"; // [★ 이미지 교체 시 이 글자를 지우고 CSS로 배경 지정 ★]
+    el.innerText = "👀";
     container.appendChild(el);
 
-    monsters.push({
-      el: el, x: x, y: y,
-      hp: 100, // 빛을 받으면 깎이는 체력
-      speed: 0.8 + Math.random() * 0.6 // 다가오는 속도
-    });
+    monsters.push({ el: el, x: x, y: y, hp: 100, speed: 0.8 + Math.random() * 0.6 });
   }
 
-  /* --- [메인 게임 물리 & 충돌 루프 (60FPS)] --- */
   function gameLoop() {
     if (!gameActive) return;
 
-    // 1. 모닥불 연료 자연 감소
     fuel -= 0.05;
     if (fuel <= 0) {
       endGame(false, "모닥불이 꺼지고 칠흑 같은 어둠이 당신을 집어삼켰습니다.");
@@ -256,50 +346,42 @@
     }
     updateUI();
 
-    // 2. 귀신 이동 및 손전등 빛(마우스) 충돌 처리
     for (let i = monsters.length - 1; i >= 0; i--) {
       let m = monsters[i];
-      
-      // 중앙 모닥불(490, 270)을 향해 이동
       let dx = 490 - m.x;
       let dy = 270 - m.y;
       let distToFire = Math.hypot(dx, dy);
 
-      // 모닥불에 도달했을 때 (공격 성공)
       if (distToFire < 50) {
-        fuel -= 30; // 연료 대폭 삭감!
+        fuel -= 30;
         container.classList.add("shake");
         setTimeout(() => container.classList.remove("shake"), 400);
-        
         m.el.remove();
         monsters.splice(i, 1);
         continue;
       }
 
-      // 이동 좌표 적용
       m.x += (dx / distToFire) * m.speed;
       m.y += (dy / distToFire) * m.speed;
       m.el.style.left = (m.x - 30) + "px";
-      m.y = m.y;
       m.el.style.top = (m.y - 30) + "px";
 
-      // 마우스(손전등)와 귀신 사이의 거리 계산
       let distToMouse = Math.hypot(mouseX - m.x, mouseY - m.y);
       
-      // 손전등 빛 영역(반경 120px 이내)에 들어오면 타들어 감!
       if (distToMouse < 120) {
         m.hp -= 2.5;
-        m.speed = 0.2; // 빛을 받으면 느려짐
+        m.speed = 0.2;
         m.el.classList.add("burning");
         
-        // 퇴치 완료
+        playGhostSizzle(); // ★ 빛에 지져질 때 치이익 소리!
+
         if (m.hp <= 0) {
           m.el.remove();
           monsters.splice(i, 1);
           continue;
         }
       } else {
-        m.speed = 0.8; // 빛을 벗어나면 다시 빨라짐
+        m.speed = 0.8;
         m.el.classList.remove("burning");
       }
     }
@@ -307,33 +389,28 @@
     loopId = requestAnimationFrame(gameLoop);
   }
 
-  /* --- [시간 및 UI 업데이트] --- */
   function updateUI() {
     fuelBar.style.width = Math.max(0, fuel) + "%";
-    
-    // 연료양에 따라 모닥불 크기 미세 조절
     let scale = 0.6 + (fuel / 100) * 0.4;
     bonfire.style.transform = `translate(-50%, -50%) scale(${scale})`;
   }
 
   function advanceClock() {
     if (!gameActive) return;
-    timeMinutes += 2; // 1초마다 2분씩 흘러감 (총 60초 버티기)
-    
+    timeMinutes += 2;
     let hours = Math.floor(timeMinutes / 60);
     let mins = timeMinutes % 60;
-    let timeStr = `0${hours}:${mins < 10 ? '0' + mins : mins} AM`;
-    clockDisplay.innerText = timeStr;
+    clockDisplay.innerText = `0${hours}:${mins < 10 ? '0' + mins : mins} AM`;
 
-    // 아침 6시 도달 시 승리!
     if (timeMinutes >= 6 * 60) {
       endGame(true, "아침 해가 떴습니다! 어둠 속의 괴물들이 물러나고 생존했습니다.");
     }
   }
 
-  /* --- [게임 시작 & 종료 제어] --- */
   function startGame() {
-    // 초기화
+    initAudio();     // ★ 오디오 엔진 활성화
+    startWindBGM();  // ★ 스산한 바람 소리 시작
+
     monsters.forEach(m => m.el.remove());
     monsters = [];
     fuel = 100;
@@ -347,11 +424,17 @@
     gameActive = true;
     updateUI();
 
-    // 타이머 및 루프 시작 (귀신은 1.8초마다 스폰)
     clearInterval(spawnTimer);
     clearInterval(clockTimer);
+    clearInterval(asmrTimer);
+
     spawnTimer = setInterval(spawnMonster, 1800);
     clockTimer = setInterval(advanceClock, 1000);
+    
+    // ★ 0.1~0.4초마다 모닥불 타닥거리는 ASMR 랜덤 재생
+    asmrTimer = setInterval(() => {
+      if (Math.random() > 0.3) playCrackling();
+    }, 150);
     
     cancelAnimationFrame(loopId);
     loopId = requestAnimationFrame(gameLoop);
@@ -359,8 +442,12 @@
 
   function endGame(victory, message) {
     gameActive = false;
+    stopWindBGM(); // ★ 바람 소리 종료
+    if (!victory) playGameOverSound(); // ★ 게임오버 사운드
+
     clearInterval(spawnTimer);
     clearInterval(clockTimer);
+    clearInterval(asmrTimer);
     cancelAnimationFrame(loopId);
     holdingIcon.style.display = "none";
 
