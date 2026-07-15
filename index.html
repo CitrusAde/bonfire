@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>bonfire</title>
   <style>
-    /* 기본 리셋 및 도트/레트로 텍스트 감성 */
+    /* [1. 기본 리셋 및 도트/레트로 텍스트 감성] */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #050505;
@@ -18,25 +18,25 @@
       user-select: none;
     }
 
-    /* 980x540 메인 컨테이너 */
+    /* [2. 980x540 메인 컨테이너] */
     #game-container {
       width: 980px;
       height: 540px;
-      background-color: #0f0c0c;
-      /* 첨부해주신 도트 아트 이미지를 넣을 때는 아래 주석을 풀고 파일명을 넣으세요! */
+      background-color: #0d0a0a;
+      /* 도트 이미지 배경 적용 시 아래 주석 해제 후 이미지 파일명 입력 */
       /* background-image: url('my-pixel-forest.png'); */
       background-size: cover;
       background-position: center;
       position: relative;
       border: 4px solid #1f1a1a;
-      box-shadow: 0 0 50px rgba(0,0,0,0.9);
+      box-shadow: 0 0 60px rgba(0,0,0,0.95);
       overflow: hidden;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
     }
 
-    /* CSS로 표현한 중앙 모닥불 연출 (이미지 사용 시 숨기거나 연출용으로 겹쳐 쓰기 가능) */
+    /* [3. 중앙 모닥불 연출] */
     #campfire-scene {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -48,21 +48,21 @@
       pointer-events: none;
     }
     .fire-anim {
-      font-size: 80px;
+      font-size: 85px;
       filter: drop-shadow(0 0 25px rgba(255, 85, 0, 0.8));
       animation: flicker 1.5s infinite alternate ease-in-out;
     }
     @keyframes flicker {
       0% { transform: scale(0.98) rotate(-1deg); filter: drop-shadow(0 0 20px rgba(255, 85, 0, 0.7)); }
-      100% { transform: scale(1.03) rotate(1deg); filter: drop-shadow(0 0 35px rgba(255, 120, 0, 0.9)); }
+      100% { transform: scale(1.04) rotate(1deg); filter: drop-shadow(0 0 40px rgba(255, 120, 0, 0.95)); }
     }
 
-    /* 하단 대화창 UI (비주얼 노벨 스타일) */
+    /* [4. 하단 비주얼 노벨 대화창 UI] */
     #dialogue-box {
       width: 920px;
-      min-height: 180px;
+      min-height: 190px;
       margin: 0 auto 20px auto;
-      background-color: rgba(15, 12, 12, 0.92);
+      background-color: rgba(14, 11, 11, 0.94);
       border: 3px solid #4a3c31;
       border-radius: 4px;
       padding: 24px 30px;
@@ -71,25 +71,23 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: 0 5px 25px rgba(0,0,0,0.8);
+      box-shadow: 0 5px 30px rgba(0,0,0,0.85);
     }
 
-    /* 캐릭터 이름 태그 */
     #char-name {
       font-size: 18px;
       color: #ff8c42;
       font-weight: bold;
       margin-bottom: 12px;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
     }
 
-    /* 대사 출력 영역 */
     #char-text {
       font-size: 16px;
       color: #eaeaea;
       line-height: 1.6;
       min-height: 50px;
-      margin-bottom: 15px;
+      margin-bottom: 16px;
       white-space: pre-line;
     }
 
@@ -117,11 +115,11 @@
       transform: translateX(6px);
     }
 
-    /* 화면 전환용 오버레이 (시작화면, 엔딩화면, 도감) */
+    /* [5. 오버레이 (시작화면, 엔딩화면, 도감)] */
     .overlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(8, 6, 6, 0.96);
+      background-color: rgba(7, 5, 5, 0.96);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -132,7 +130,7 @@
     .hidden { display: none !important; }
     
     h1 {
-      font-size: 54px;
+      font-size: 56px;
       color: #ff6b35;
       margin-bottom: 15px;
       letter-spacing: 6px;
@@ -163,7 +161,7 @@
     #archive-popup {
       background: #14100e;
       border: 2px solid #4a3c31;
-      width: 640px;
+      width: 660px;
       max-height: 440px;
       padding: 30px;
       overflow-y: auto;
@@ -174,16 +172,16 @@
     }
     .archive-item { margin-bottom: 15px; padding: 15px; background: #1c1714; border: 1px solid #2d241f; }
     .archive-title { font-weight: bold; color: #ff6b35; margin-bottom: 8px; font-size: 16px; }
-    .archive-desc { font-size: 14px; color: #aaa; line-height: 1.5; }
+    .archive-desc { font-size: 14px; color: #aaa; line-height: 1.5; white-space: pre-line; }
     .locked { color: #555; font-style: italic; }
   </style>
 </head>
 <body>
 
 <div id="game-container">
-  <!-- 배경 모닥불 (도트 이미지 넣을 시 자연스럽게 어우러지거나 숨길 수 있음) -->
+  <!-- 배경 모닥불 -->
   <div id="campfire-scene">
-    <div class="fire-anim">🔥</div>
+    <div class="fire-anim" id="fire-icon">🔥</div>
   </div>
 
   <!-- 하단 비주얼 노벨 대화 UI -->
@@ -198,7 +196,7 @@
   <!-- 시작 화면 -->
   <div id="start-screen" class="overlay">
     <h1>bonfire</h1>
-    <div class="subtitle">어두운 숲, 타오르는 불꽃, 그리고 당신의 선택</div>
+    <div class="subtitle">어두운 숲, 타오르는 불꽃, 그리고 당신의 성향</div>
     <div class="center-btn-group">
       <button class="center-btn" onclick="startGame()">게임 시작</button>
       <button class="center-btn secondary" onclick="openArchive()">엔딩 도감</button>
@@ -218,115 +216,183 @@
 
   <!-- 엔딩 화면 -->
   <div id="ending-screen" class="overlay hidden">
-    <h1 id="end-title" style="font-size: 32px; color: #ff8c42;"></h1>
-    <div id="end-desc" class="subtitle" style="max-width: 650px; text-align: center; line-height: 1.8; margin: 25px 0 45px 0; color: #ccc;"></div>
+    <h1 id="end-title" style="font-size: 30px; color: #ff8c42;"></h1>
+    <div id="end-desc" class="subtitle" style="max-width: 680px; text-align: center; line-height: 1.8; margin: 25px 0 45px 0; color: #ccc; white-space: pre-line;"></div>
     <button class="center-btn" onclick="returnToTitle()">타이틀로 돌아가기</button>
   </div>
 </div>
 
 <script>
-  /* --- [1. 스토리 및 대사 트리 (완전 분기형)] --- */
-  // 수치 계산 없이, 선택지의 "next"가 다음 대사(Scene ID)를 직접 가리킵니다.
+  /* --- [1. MBTI 성향 시스템 변수 (UI에 절대 드러나지 않음)] --- */
+  let tendencies = {
+    S: 0,         // Survival (개인 생존주의)
+    Sacrifice: 0, // Sacrifice (이타 및 희생)
+    I: 0,         // Inquiry (세계의 진실 탐구)
+    T: 0          // Trust (타인을 향한 신뢰, 음수면 불신)
+  };
+
+  /* --- [2. 전체 방대한 스토리 및 대사 트리 (JSON 구조)] --- */
   const STORY_TREE = {
-    // [프롤로그]
+    // === [오프닝] ===
     "start": {
       name: "나",
-      text: "스산한 밤바람이 숲을 감싼다. 모닥불의 타닥거리는 소리만이 고요함을 깨우고 있다.\n이 어둠 속에서 밤을 지새워야 한다.",
+      text: "스산한 밤바람이 숲을 매섭게 흔든다. 모닥불의 타닥거리는 소리만이 고요함을 깨우고 있다.\n이 깊고 어두운 숲속에서 홀로 밤을 지새워야 한다.",
       choices: [
-        { text: "장작을 하나 더 던져 넣고 조용히 불을 쬔다.", next: "meet_stranger_1" }
+        { text: "바람막이가 될 만한 돌을 돌려쌓아 내 자리를 굳건히 한다.", next: "opening_2", effect: { S: 1 } },
+        { text: "불꽃의 색이 가끔 기묘한 파란색으로 변한다. 가만히 응시한다.", next: "opening_2", effect: { I: 1 } }
       ]
     },
-
-    // [첫 번째 만남 - 방랑자]
-    "meet_stranger_1": {
-      name: "떨고 있는 방랑자",
-      text: "어둠 속에서 바스락거리는 발소리가 들리더니, 낡은 망토를 쓴 사내가 모습을 드러낸다.\n'이보시오... 불빛을 보고 왔소. 몸이 얼어 죽을 것 같으니 잠시 곁에 앉아도 되겠소?'",
-      choices: [
-        { text: "'경계는 늦추지 않겠소. 불만 쬐고 떠나시오.' (냉정한 태도)", next: "path_cold_1" },
-        { text: "'물론이오. 여기 따뜻한 자리로 오시오.' (이타적인 태도)", next: "path_warm_1" },
-        { text: "'이 깊은 숲속을 혼자 걷다니, 당신은 대체 누구요?' (의심과 질문)", next: "path_weird_1" }
-      ]
-    },
-
-    /* === [분기 A: 냉정/생존 루트로 진입했을 때 만나는 캐릭터] === */
-    "path_cold_1": {
-      name: "떨고 있는 방랑자",
-      text: "'참으로 차가운 사람이군... 그래도 이 불빛 덕에 살았소.'\n방랑자는 굳은 표정으로 불만 쬐더니 아침이 되기 전 훌쩍 떠나버렸다.",
-      choices: [
-        { text: "남을 신경 쓸 여유는 없다. 내 생존이 우선이다.", next: "meet_mercenary" }
-      ]
-    },
-    "meet_mercenary": {
-      name: "부상당한 용병",
-      text: "다음 날 밤, 피 냄새를 풍기며 거친 용병이 모닥불로 나타났다.\n'쯧, 당신... 눈빛을 보니 남 돕는 성격은 아니군. 숲을 빠져나갈 지도와 장비를 줄 테니, 내 뒤를 쫓는 놈들이 오면 딴 길로 알려줘.'",
-      choices: [
-        { text: "'좋다. 장비를 놔두고 저쪽 부서진 오두막에 숨어 있어라.'", next: "end_escape_pre" },
-        { text: "'귀찮은 일에 엮이기 싫다. 내 불빛에서 당장 꺼져라.'", next: "end_escape_pre" }
-      ]
-    },
-    "end_escape_pre": {
+    "opening_2": {
       name: "나",
-      text: "나는 용병이 챙겨준 생존 장비와 지도를 단단히 챙겼다.\n다른 이들이 숲에서 비명을 지르든 말든, 나만 살아서 이곳을 빠져나가면 그만이다.",
+      text: "저 멀리 어둠 속에서 마른 나뭇잎을 밟는 발소리가 들려온다.\n누군가 이 불빛을 향해 천천히 다가오고 있다.",
       choices: [
-        { text: "모닥불을 등지고 문명 세계로 발걸음을 옮긴다.", next: "END_1" }
+        { text: "길을 잃은 사람일 것이다. 불길을 키워 위치를 알려준다.", next: "npc1_1", effect: { T: 1, Sacrifice: 1 } },
+        { text: "무슨 위협이 될지 모른다. 손을 뻗어 단단한 나무 막대기를 쥔다.", next: "npc1_1", effect: { T: -1, S: 1 } }
       ]
     },
 
-    /* === [분기 B: 이타/희생 루트로 진입했을 때 만나는 캐릭터] === */
-    "path_warm_1": {
-      name: "떨고 있는 방랑자",
-      text: "'정말 고맙소...! 당신의 온기 덕에 오늘 밤을 넘길 수 있겠군요.'\n그는 눈물을 글썽이며, 이 숲에 길을 잃은 가엾은 사람들이 더 많다는 이야기를 들려주었다.",
+    // === [NPC 1: 눈보라를 헤쳐 온 나무꾼] ===
+    "npc1_1": {
+      name: "추위에 떠는 나무꾼",
+      text: "얼굴에 동상이 걸린 사내가 굳은 표정으로 불빛 곁에 멈춰 섰다.\n'살았군... 불빛이 아니었다면 이대로 얼어 죽을 뻔했소. 혹시 옆에 좀 앉아도 되겠소?'",
       choices: [
-        { text: "더 많은 장작을 주워와 모닥불의 불꽃을 크게 키운다.", next: "meet_pilgrim" }
+        { text: "'그러시오. 추운 밤인데 어서 앉아 몸을 녹이시오.'", next: "npc1_warm", effect: { T: 2, Sacrifice: 1 } },
+        { text: "'손에 아무것도 쥐지 않은 것을 먼저 보여주시오.'", next: "npc1_cold", effect: { T: -2, S: 1 } }
       ]
     },
-    "meet_pilgrim": {
-      name: "길을 잃은 순례자들",
-      text: "불꽃이 거대해지자, 멀리서 빛을 본 피난민과 순례자 무리가 모닥불로 몰려들었다.\n'오오... 이렇게 밝고 따뜻한 불빛이라니! 당신이 우리를 살렸습니다!'",
+    "npc1_warm": {
+      name: "추위에 떠는 나무꾼",
+      text: "사내가 고맙다며 자리에 앉아 품에서 딱딱하게 얼어붙은 빵 한 조각을 꺼낸다.\n'이거라도 나눠 먹읍시다. 이 험한 숲에 왜 혼자 이러고 있는 거요?'",
       choices: [
-        { text: "가진 것을 모두 나누어주고, 그들의 안식처를 지켜주기로 결심한다.", next: "END_2" }
+        { text: "'나도 모르겠소. 정신을 차려보니 이 모닥불 앞이었고, 불을 끌 수가 없었소.'", next: "npc1_end", effect: { I: 2 } },
+        { text: "'그저 숲을 빠져나갈 아침을 기다릴 뿐이오. 빵은 사양하겠소.'", next: "npc1_end", effect: { S: 1 } }
+      ]
+    },
+    "npc1_cold": {
+      name: "추위에 떠는 나무꾼",
+      text: "사내가 씁쓸하게 웃으며 도끼를 멀리 내려놓는다.\n'험악한 세상이니 이해하오. 그런데 당신, 이 불을 너무 오래 피우진 마시오. 숲이 이 불빛을... 아주 싫어하니까.'",
+      choices: [
+        { text: "'숲이 불빛을 싫어한다니? 그게 대체 무슨 뜻이오?'", next: "npc1_end", effect: { I: 2 } },
+        { text: "'추워서 피운 불일 뿐이오. 쓸데없는 소리 말고 몸이나 녹이시오.'", next: "npc1_end", effect: { S: 2 } }
+      ]
+    },
+    "npc1_end": {
+      name: "추위에 떠는 나무꾼",
+      text: "'아무튼 은혜는 입었소. 난 내일 아침 일찍 숲을 빠져나갈 거요. 당신도 조심하시오.'\n사내는 낡은 가죽 지도 한 장을 남겨두고 불 옆에서 눈을 감았다.",
+      choices: [
+        { text: "남겨진 지도를 챙기며 타닥거리는 불빛을 멍하니 바라본다.", next: "npc2_1", effect: {} }
       ]
     },
 
-    /* === [분기 C: 의심/진실 추구 루트로 진입했을 때 만나는 캐릭터] === */
-    "path_weird_1": {
-      name: "떨고 있는 방랑자",
-      text: "그는 기묘한 미소를 지으며 모닥불의 불꽃을 가리켰다.\n'내가 누구인지는 중요하지 않소. 당신은 이 불이 그저 몸을 녹이기 위해 타오른다고 생각하시오?'",
+    // === [NPC 2: 도망쳐 나온 학자] ===
+    "npc2_1": {
+      name: "겁에 질린 학자",
+      text: "다음 날 새벽, 안경이 깨진 학자가 허겁지겁 나타나 모닥불을 보며 소리친다.\n'멍청하군! 이 불을 피우면 안 돼! 당장 흙을 덮어 불을 끄시오!'",
       choices: [
-        { text: "'무슨 소리냐? 이 불빛 아래 무엇이 있단 말인가?'", next: "meet_cultist" }
+        { text: "'이 추위에 불을 끄면 얼어 죽소! 진정하고 이유부터 말해보시오.'", next: "npc2_survival", effect: { S: 2 } },
+        { text: "'당장 불을 꺼야 하는 이유가 뭐요? 이 불에 얽힌 비밀을 아는 거요?'", next: "npc2_secret", effect: { I: 2 } }
       ]
     },
-    "meet_cultist": {
-      name: "눈이 먼 광신도",
-      text: "방랑자가 사라진 자리에, 눈이 먼 노인이 지팡이를 짚고 다가와 속삭였다.\n'이 숲은 거대한 제단... 네가 피운 불은 땅 밑에서 잠든 심연의 괴수를 부르는 신호다. 봐라, 불꽃의 색이 변하고 있지 않느냐!'",
+    "npc2_survival": {
+      name: "겁에 질린 학자",
+      text: "'얼어 죽는 건 고통스럽지 않아! 하지만 저 불빛이 저 깊은 구덩이 속의 \"눈동자들\"을 깨우면... 우리 모두 끝이란 말이오!'",
       choices: [
-        { text: "미친 소리다! 불을 더 세게 지펴서 이 어둠과 괴수를 모두 태워버린다!", next: "END_3" },
-        { text: "노인의 말이 맞을지도 모른다. 발로 밟아 모닥불을 완전히 꺼버린다.", next: "END_3" }
+        { text: "그가 극도로 겁에 질린 것을 보고, 따뜻한 물 한 잔을 건네며 진정시킨다.", next: "npc2_end", effect: { Sacrifice: 2, T: 1 } },
+        { text: "미친 사람이라 생각하고, 모닥불에 접근하지 못하게 거칠게 밀쳐낸다.", next: "npc2_end", effect: { S: 2, T: -1 } }
+      ]
+    },
+    "npc2_secret": {
+      name: "겁에 질린 학자",
+      text: "'이 숲은 고대의 거대한 숨구멍이고, 이 모닥불은 놈들을 깨우는 신호탄이요!\n당신이 불길을 살려둘수록 숲 지하의 놈들이 숨을 쉬기 시작할 거요!'",
+      choices: [
+        { text: "'정말 지하에 무언가 살고 있단 말이오? 증거가 있소?'", next: "npc2_end", effect: { I: 2 } },
+        { text: "'미신과 음모론일 뿐이다. 나는 그저 살아남아 나가기만 하면 된다.'", next: "npc2_end", effect: { S: 2 } }
+      ]
+    },
+    "npc2_end": {
+      name: "겁에 질린 학자",
+      text: "학자는 땀을 흘리며 뒷걸음질 쳤다.\n'내 경고를 잊지 마시오... 온기에 눈이 멀어 심연을 보지 못하는 어리석은 자여...'\n그는 기묘한 문자가 적힌 양피지를 떨어뜨린 채 어둠 속으로 도망쳤다.",
+      choices: [
+        { text: "양피지를 주워 들고 다시 고요해진 모닥불에 장작을 넣는다.", next: "npc3_1", effect: {} }
+      ]
+    },
+
+    // === [NPC 3: 상처 입은 어린 파수꾼] ===
+    "npc3_1": {
+      name: "상처 입은 파수꾼 소녀",
+      text: "밤이 깊어지자, 피 묻은 가죽 갑옷을 입은 소녀가 절뚝거리며 다가왔다.\n가슴팍에는 기괴하게 꿈틀거리는 검은 상처가 번지고 있었다.\n'불빛... 아직 따뜻한 불빛이 남아있었어...'",
+      choices: [
+        { text: "'꼬마야, 괜찮니? 어디서 이런 다친 거야?' 걱정하며 부축한다.", next: "npc3_sacrifice", effect: { Sacrifice: 2, T: 1 } },
+        { text: "뒤에 무서운 추격자가 따라올지 모르니 주변 어둠부터 경계한다.", next: "npc3_reject", effect: { S: 2, T: -1 } }
+      ]
+    },
+    "npc3_sacrifice": {
+      name: "상처 입은 파수꾼 소녀",
+      text: "'저 너머에... 길을 잃은 우리 마을 사람들이 얼어붙고 있어요.\n부탁이에요, 당신의 장작을 모두 던져 넣어 이 모닥불을 거대하게 키워주세요. 그래야 사람들이 길을 찾아요...'",
+      choices: [
+        { text: "'하지만 불을 키우면 숲의 괴물들도 몰려올 거다. 그건 너무 위험해.'", next: "npc3_end", effect: { S: 2 } },
+        { text: "'알겠다. 내 장작을 아끼지 않고 모두 불태워 길을 밝혀주마.'", next: "npc3_end", effect: { Sacrifice: 3 } }
+      ]
+    },
+    "npc3_reject": {
+      name: "상처 입은 파수꾼 소녀",
+      text: "'경계하시는군요... 맞아요, 제 안의 검은 상처가 이 숲의 저주를 품고 있으니까요.\n저와 너무 가까이 있으면 당신도 이 어둠에 전염될지 몰라요.'",
+      choices: [
+        { text: "'그 검은 멍은 어떻게 생기는 거지? 모닥불과 관련이 있는 건가?'", next: "npc3_end", effect: { I: 2 } },
+        { text: "전염을 막기 위해 소녀에게 장작을 조금 쥐여주고 다른 곳으로 가라 권한다.", next: "npc3_end", effect: { S: 2 } }
+      ]
+    },
+    "npc3_end": {
+      name: "상처 입은 파수꾼 소녀",
+      text: "소녀는 당신의 눈빛을 담담히 바라보았다.\n'당신이 어떤 선택을 하든... 이 불꽃은 곧 끝을 맞이할 거예요. 운명이 이끄는 대로 가세요.'\n소녀는 작은 은빛 팬던트를 두고 조용히 자리를 떴다.",
+      choices: [
+        { text: "이제 밤의 끝이 다가온다. 마지막 방랑자가 걸어오는 소리가 들린다.", next: "npc4_1", effect: {} }
+      ]
+    },
+
+    // === [NPC 4: 침묵의 방랑 기사 (성향 반사 노드)] ===
+    "npc4_1": {
+      name: "침묵의 방랑 기사",
+      text: "거대한 대검을 멘 늙은 기사가 묵직한 발걸음으로 모닥불 앞에 멈춰 섰다.\n그는 말없이 당신과 타오르는 불꽃을 번갈아 응시한다.",
+      choices: [
+        { text: "기사의 눈을 마주 보며 침묵을 지킨다.", next: "npc4_eval", effect: {} }
+      ]
+    },
+    "npc4_eval": {
+      name: "침묵의 방랑 기사",
+      text: "기사가 입을 열었다.\n'나는 이 숲을 지나는 수많은 방랑자들을 보았지...'\n(기사는 당신이 숲에서 행한 선택들의 냄새를 맡고 있습니다.)",
+      choices: [
+        { text: "기사가 내릴 마지막 평가를 기다린다.", next: "check_ending", effect: {} }
       ]
     }
   };
 
-  /* --- [2. 엔딩 데이터 및 도감 저장소] --- */
+  /* --- [3. 엔딩 데이터 및 도감 저장소] --- */
   const ENDINGS = {
     "END_1": {
       id: "END_1",
       title: "[엔딩 1: 차가운 탈출]",
-      desc: "당신은 타인을 철저히 도구로 삼고, 오직 자신의 생존을 위한 장비만을 챙겨 숲을 무사히 빠져나왔습니다.\n문명 세계로 돌아왔지만, 꿈속에서 가끔 그 스산한 모닥불과 어둠 속에 남겨진 이들의 비명 소리가 귓가를 맴돕니다."
+      desc: "당신은 타인의 호의를 경계하고 오직 자신의 안위를 최우선으로 삼았습니다.\n\n동이 트자마자 당신은 나그네들이 남긴 장비와 지도를 챙겨 냉정하게 숲을 빠져나왔습니다. 뒤에서 길을 잃은 이들의 비명과 차가운 눈보라가 몰아쳤지만, 당신은 단 한 번도 뒤돌아보지 않았습니다.\n\n비록 혼자뿐이지만, 당신은 살아남아 문명 세계로 복귀했습니다."
     },
     "END_2": {
       id: "END_2",
       title: "[엔딩 2: 구원의 봉화]",
-      desc: "당신이 아낌없이 짚인 불꽃은 숲에서 가장 거대한 등대가 되었습니다.\n길을 잃은 수많은 사람들이 불빛을 찾아와 온기를 나누었고, 스산했던 어둠의 숲은 어느새 모두가 서로를 의지하는 따뜻한 안식처이자 마을이 되었습니다."
+      desc: "당신은 자신의 손해와 위험을 감수하면서도 타인을 향한 따뜻한 손길을 거두지 않았습니다.\n\n당신이 아낌없이 짚어 넣은 불꽃은 어둠을 찢는 숲의 가장 거대한 등대가 되었습니다. 빛을 본 수많은 피난민과 상처 입은 이들이 모닥불로 모여들었고, 서로의 온기를 나누며 얼어붙은 숲을 이겨냈습니다.\n\n당신은 그들이 맹세한 영원한 영웅이자 구원자가 되었습니다."
     },
     "END_3": {
       id: "END_3",
       title: "[엔딩 3: 고대의 봉인]",
-      desc: "모닥불이 가진 섬뜩한 진실을 마주한 당신은 평범한 생존을 포기했습니다.\n숲의 깊은 심연, 그리고 불꽃의 기원과 맞닿은 당신의 운명은 이제 세상의 상식을 벗어난 거대한 비밀 속으로 영원히 잠겨들었습니다."
+      desc: "당신은 눈앞의 생존이나 얄빡한 호의에 흔들리지 않고, 이 숲과 모닥불이 가진 기괴한 진실을 끈질기게 파헤쳤습니다.\n\n불꽃의 진정한 기원과 숲 지하에 도사린 심연의 비밀을 깨달은 당신은 평범한 인간의 길을 포기했습니다. 당신은 스스로 불꽃을 제어하는 고대의 파수꾼이 되어, 상식을 벗어난 영원한 신비 속으로 사라졌습니다."
+    },
+    "END_4": {
+      id: "END_4",
+      title: "[엔딩 4: 안개 속의 방황]",
+      desc: "당신은 확고한 생존의 비정함도, 자신을 내던지는 희생도, 심연을 쫓는 광기도 택하지 않았습니다.\n\n모든 것이 애매했던 당신의 불꽃은 이내 짙은 안개 속에 먹혀들어가며 차갑게 식어갔습니다. 어디로 가야 할지 방향을 잃은 당신은 스산한 숲속의 잊혀진 또 다른 방랑자가 되어 영원히 밤의 어둠을 헤매게 되었습니다."
     }
   };
 
   function getUnlockedEndings() {
-    const data = localStorage.getItem("bonfire_pixel_endings");
+    const data = localStorage.getItem("bonfire_endings_mbti");
     return data ? JSON.parse(data) : [];
   }
 
@@ -334,48 +400,87 @@
     const list = getUnlockedEndings();
     if (!list.includes(id)) {
       list.push(id);
-      localStorage.setItem("bonfire_pixel_endings", JSON.stringify(list));
+      localStorage.setItem("bonfire_endings_mbti", JSON.stringify(list));
     }
   }
 
-  /* --- [3. 게임 렌더링 엔진] --- */
-  let currentScene = "start";
-
+  /* --- [4. 게임 렌더링 엔진] --- */
   function startGame() {
+    // 성향 변수 초기화
+    tendencies = { S: 0, Sacrifice: 0, I: 0, T: 0 };
+    
     document.getElementById("start-screen").classList.add("hidden");
     document.getElementById("ending-screen").classList.add("hidden");
     renderScene("start");
   }
 
   function renderScene(sceneId) {
-    // 엔딩 ID에 도달한 경우 엔딩 처리
-    if (ENDINGS[sceneId]) {
-      triggerEnding(sceneId);
+    // 4번 NPC 평가 노드에서 성향에 따른 기사의 대사 변경 처리
+    if (sceneId === "npc4_eval") {
+      const scene = STORY_TREE["npc4_eval"];
+      if (tendencies.I >= 4) {
+        scene.text = "기사가 묵직하게 입을 열었다.\n'당신의 눈동자는 온기가 아니라, 저 불꽃 밑에 가려진 기괴한 진실을 파헤치려는 호기심으로 번뜩이고 있군. 그 지식이 당신을 구원할지, 파멸시킬지 지켜보겠소.'";
+      } else if (tendencies.Sacrifice >= 4) {
+        scene.text = "기사가 묵직하게 입을 열었다.\n'어리석을 정도로 자신의 장작을 아끼지 않고 남을 위해 온기를 나누었군... 그 미련한 희생이 이 얼어붙은 숲에 어떤 기적을 부를지 지켜보겠소.'";
+      } else {
+        scene.text = "기사가 묵직하게 입을 열었다.\n'당신의 몸에서는 타인은 어찌 되든 나만은 살아서 나가겠다는 차갑고 독한 생존의 냄새가 나는군. 그 비정함이야말로 이 숲을 빠져나갈 유일한 무기일지도 모르지.'";
+      }
+    }
+
+    // 엔딩 판정 분기점에 도달했을 때
+    if (sceneId === "check_ending") {
+      calculateAndTriggerEnding();
       return;
     }
 
     const scene = STORY_TREE[sceneId];
     if (!scene) return;
 
-    currentScene = sceneId;
     document.getElementById("char-name").innerText = scene.name;
     document.getElementById("char-text").innerText = scene.text;
 
     const choiceContainer = document.getElementById("choice-container");
-    choiceContainer.innerHTML = ""; // 기존 선택지 비우기
+    choiceContainer.innerHTML = "";
 
     scene.choices.forEach(choice => {
       const btn = document.createElement("button");
       btn.className = "choice-btn";
       btn.innerText = "▶ " + choice.text;
-      btn.onclick = () => renderScene(choice.next);
+      btn.onclick = () => {
+        // 선택지 클릭 시 성향 변수 조용히 누적
+        if (choice.effect) {
+          for (let key in choice.effect) {
+            tendencies[key] += choice.effect[key];
+          }
+        }
+        renderScene(choice.next);
+      };
       choiceContainer.appendChild(btn);
     });
   }
 
-  function triggerEnding(endId) {
-    const endData = ENDINGS[endId];
-    unlockEnding(endId); // 도감에 자동 해금 저장
+  /* --- [5. 최종 엔딩 계산 (MBTI 판정식)] --- */
+  function calculateAndTriggerEnding() {
+    let finalEndId = "END_4"; // 기본값 (안개 속의 방황)
+
+    // 성향 수치 기반 판정 (가장 높은 특성이 엔딩 결정)
+    if (tendencies.I >= 4 && tendencies.I >= tendencies.S && tendencies.I >= tendencies.Sacrifice) {
+      finalEndId = "END_3"; // 고대의 봉인
+    } else if (tendencies.Sacrifice >= 4 && tendencies.Sacrifice >= tendencies.S) {
+      finalEndId = "END_2"; // 구원의 봉화
+    } else if (tendencies.S >= 4) {
+      finalEndId = "END_1"; // 차가운 탈출
+    }
+
+    const endData = ENDINGS[finalEndId];
+    unlockEnding(finalEndId); // 도감에 자동 해금 저장
+
+    // 불꽃 연출을 엔딩에 맞게 극적으로 변경
+    const icon = document.getElementById("fire-icon");
+    if (finalEndId === "END_3") icon.innerText = "🔮";
+    else if (finalEndId === "END_2") icon.innerText = "🌟";
+    else if (finalEndId === "END_1") icon.innerText = "💨";
+    else icon.innerText = "🌫️";
 
     document.getElementById("end-title").innerText = endData.title;
     document.getElementById("end-desc").innerText = endData.desc;
@@ -383,11 +488,12 @@
   }
 
   function returnToTitle() {
+    document.getElementById("fire-icon").innerText = "🔥";
     document.getElementById("ending-screen").classList.add("hidden");
     document.getElementById("start-screen").classList.remove("hidden");
   }
 
-  /* --- [4. 도감 팝업 제어] --- */
+  /* --- [6. 도감 팝업 제어] --- */
   function openArchive() {
     const list = document.getElementById("archive-list");
     list.innerHTML = "";
@@ -399,7 +505,7 @@
       if (unlocked.includes(end.id)) {
         item.innerHTML = `<div class="archive-title">${end.title} [ 기록됨 ]</div><div class="archive-desc">${end.desc}</div>`;
       } else {
-        item.innerHTML = `<div class="archive-title locked">??? [ 미발견 엔딩 ]</div><div class="archive-desc locked">아직 이 결말에 도달하지 못했습니다. 모닥불에서 다른 선택을 해보세요.</div>`;
+        item.innerHTML = `<div class="archive-title locked">??? [ 미발견 결말 ]</div><div class="archive-desc locked">아직 이 결말에 도달하지 못했습니다. 모닥불에서 다른 선택을 시도해 보세요.</div>`;
       }
       list.appendChild(item);
     });
