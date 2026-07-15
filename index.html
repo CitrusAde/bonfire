@@ -2,189 +2,374 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>bonfire - Advanced Atmosphere</title>
+  <title>bonfire - Survive Until Dawn</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #050505; color: #dfdfdf;
-      font-family: 'DungGeunMo', 'Galmuri11', 'Malgun Gothic', monospace;
+      background-color: #050505; color: #fff;
+      font-family: 'Malgun Gothic', sans-serif;
       display: flex; justify-content: center; align-items: center;
       height: 100vh; overflow: hidden; user-select: none;
-    }
-    #game-container {
-      width: 980px; height: 540px; background-color: #0d0a0a;
-      position: relative; border: 4px solid #1f1a1a;
-      box-shadow: 0 0 60px rgba(0,0,0,0.95); overflow: hidden;
-      display: flex; flex-direction: column; justify-content: flex-end;
-      transition: border-color 0.3s;
+      cursor: crosshair; /* 기본 커서 조준선 */
     }
 
-    /* 화면 진동 효과 (Shake Juice) */
-    .shake { animation: shake-anim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    /* 980x540 메인 게임판 */
+    #game-container {
+      width: 980px; height: 540px;
+      position: relative; overflow: hidden;
+      border: 4px solid #1c1815;
+      box-shadow: 0 0 50px rgba(0,0,0,0.95);
+      
+      /* [★ 이미지 교체 구역 1: 배경 이미지 ★] */
+      background-color: #0c0908;
+      /* background-image: url('forest_bg.png'); */
+      background-size: cover; background-position: center;
+    }
+
+    /* 화면 진동 효과 (공격받을 때) */
+    .shake { animation: shake-anim 0.4s both; }
     @keyframes shake-anim {
       0%, 100% { transform: translate(0, 0); }
-      20%, 60% { transform: translate(-8px, 4px); }
-      40%, 80% { transform: translate(8px, -4px); }
+      20%, 60% { transform: translate(-10px, 6px); }
+      40%, 80% { transform: translate(10px, -6px); }
     }
 
-    #campfire-scene {
+    /* 마우스 손전등 효과 (커서를 따라다니는 시야 빛) */
+    #flashlight {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 5;
+      /* 마우스 위치를 중심으로 밝고, 주변은 칠흑 같이 어두운 그라데이션 */
+      background: radial-gradient(circle 140px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 50%, rgba(5,4,4,0.95) 85%);
+    }
+
+    /* 상단 UI 바 */
+    #ui-bar {
+      position: absolute; top: 15px; left: 20px; right: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 10; font-weight: bold; font-size: 18px; text-shadow: 0 0 10px #000;
+    }
+    .fuel-meter { display: flex; align-items: center; gap: 10px; }
+    #fuel-bar-bg { width: 200px; height: 16px; background: #332; border: 2px solid #554; border-radius: 8px; overflow: hidden; }
+    #fuel-bar { width: 100%; height: 100%; background: #ff5500; transition: width 0.2s; }
+    .clock { font-size: 24px; color: #ffcc00; font-family: monospace; }
+
+    /* [★ 이미지 교체 구역 2: 중앙 모닥불 ★] */
+    #bonfire {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px; height: 100px; z-index: 2;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 70px; cursor: pointer;
+      /* background-image: url('bonfire.png'); */
+      background-size: contain; background-repeat: no-repeat;
+      filter: drop-shadow(0 0 30px rgba(255, 85, 0, 0.9));
+      transition: transform 0.1s;
+    }
+    #bonfire:active { transform: translate(-50%, -50%) scale(0.95); }
+
+    /* [★ 이미지 교체 구역 3: 장작 더미 (우측 하단) ★] */
+    #wood-pile {
+      position: absolute; bottom: 20px; right: 30px;
+      width: 80px; height: 80px; z-index: 6;
+      background-color: #2b1f17; border: 2px solid #543d2b; border-radius: 10px;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      z-index: 1; pointer-events: none;
+      cursor: pointer; font-size: 32px; box-shadow: 0 0 15px rgba(0,0,0,0.8);
+      transition: all 0.15s;
     }
-    .fire-anim {
-      font-size: 85px; filter: drop-shadow(0 0 25px rgba(255, 85, 0, 0.8));
-      animation: flicker 1.5s infinite alternate ease-in-out;
-    }
-    @keyframes flicker {
-      0% { transform: scale(0.98) rotate(-1deg); filter: drop-shadow(0 0 20px rgba(255, 85, 0, 0.7)); }
-      100% { transform: scale(1.04) rotate(1deg); filter: drop-shadow(0 0 40px rgba(255, 120, 0, 0.95)); }
+    #wood-pile:hover { background-color: #3d2c20; transform: scale(1.05); }
+    #wood-pile:active { transform: scale(0.95); }
+    #wood-label { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+    /* 마우스로 장작을 들고 있을 때 마우스 옆에 붙는 아이콘 */
+    #holding-icon {
+      position: absolute; pointer-events: none; z-index: 20;
+      font-size: 36px; display: none; transform: translate(-50%, -50%);
+      filter: drop-shadow(0 0 10px #000);
     }
 
-    #dialogue-box {
-      width: 920px; min-height: 190px; margin: 0 auto 20px auto;
-      background-color: rgba(14, 11, 11, 0.95); border: 3px solid #4a3c31;
-      border-radius: 4px; padding: 24px 30px; position: relative; z-index: 5;
-      display: flex; flex-direction: column; justify-content: space-between;
-      box-shadow: 0 5px 30px rgba(0,0,0,0.85);
+    /* [★ 이미지 교체 구역 4: 다가오는 귀신/괴물 ★] */
+    .monster {
+      position: absolute; width: 60px; height: 60px;
+      z-index: 3; pointer-events: none;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 40px;
+      /* background-image: url('ghost.png'); */
+      background-size: contain; background-repeat: no-repeat;
+      filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8));
+      transition: filter 0.1s;
     }
-    #char-name { font-size: 18px; color: #ff8c42; font-weight: bold; margin-bottom: 12px; letter-spacing: 1.5px; }
-    #char-text { font-size: 16px; color: #eaeaea; line-height: 1.6; min-height: 50px; margin-bottom: 16px; white-space: pre-line; }
-    
-    /* 타이핑 커서 연출 */
-    .typing-cursor::after { content: ' █'; color: #ff8c42; animation: blink 0.8s infinite; }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    /* 손전등 빛을 받아 타들어 갈 때의 효과 */
+    .burning { filter: drop-shadow(0 0 25px rgba(255, 255, 255, 1)) brightness(2); }
 
-    #choice-container { display: flex; flex-direction: column; gap: 8px; opacity: 0; transition: opacity 0.5s ease; }
-    .choice-btn {
-      background: #1a1614; color: #ccc; border: 1px solid #4a3c31;
-      padding: 12px 18px; font-size: 15px; font-family: inherit;
-      text-align: left; cursor: pointer; transition: all 0.15s ease;
-    }
-    .choice-btn:hover { background: #332821; color: #fff; border-color: #ff8c42; transform: translateX(6px); }
-
+    /* 오버레이 창 (시작/결과) */
     .overlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(7, 5, 5, 0.96); display: flex; flex-direction: column;
-      justify-content: center; align-items: center; z-index: 10; padding: 40px;
+      background: rgba(5, 4, 4, 0.95); z-index: 30;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
     .hidden { display: none !important; }
-    h1 { font-size: 56px; color: #ff6b35; margin-bottom: 15px; letter-spacing: 6px; }
-    .subtitle { color: #888; margin-bottom: 50px; font-size: 16px; }
-    .center-btn {
-      padding: 14px 32px; font-size: 16px; font-family: inherit;
-      background-color: #ff6b35; color: #fff; border: none; cursor: pointer; font-weight: bold;
+    h1 { font-size: 50px; color: #ff5500; margin-bottom: 15px; letter-spacing: 4px; }
+    p { font-size: 16px; color: #aaa; margin-bottom: 30px; text-align: center; line-height: 1.6; }
+    .btn {
+      padding: 15px 40px; font-size: 18px; font-weight: bold;
+      background: #ff5500; color: #fff; border: none; border-radius: 5px;
+      cursor: pointer; transition: 0.2s;
     }
+    .btn:hover { background: #ff7733; transform: scale(1.05); }
   </style>
 </head>
 <body>
 
 <div id="game-container">
-  <div id="campfire-scene"><div class="fire-anim" id="fire-icon">🔥</div></div>
+  <!-- 손전등 시야 영역 -->
+  <div id="flashlight"></div>
   
-  <div id="dialogue-box">
-    <div>
-      <div id="char-name"></div>
-      <div id="char-text" class="typing-cursor"></div>
+  <!-- 상단 상태바 -->
+  <div id="ui-bar">
+    <div class="fuel-meter">
+      <span>🔥 모닥불:</span>
+      <div id="fuel-bar-bg"><div id="fuel-bar"></div></div>
     </div>
-    <div id="choice-container"></div>
+    <div class="clock" id="clock-display">04:00 AM</div>
   </div>
 
+  <!-- 중앙 모닥불 -->
+  <div id="bonfire" onclick="feedFire()">🔥</div>
+
+  <!-- 우측 하단 장작 더미 -->
+  <div id="wood-pile" onclick="grabWood()">
+    🪵<span id="wood-label">장작 집기</span>
+  </div>
+
+  <!-- 마우스 커서에 붙는 장작 아이콘 -->
+  <div id="holding-icon">🪵</div>
+
+  <!-- 시작 화면 -->
   <div id="start-screen" class="overlay">
-    <h1>bonfire</h1>
-    <div class="subtitle">어두운 숲, 타오르는 불꽃, 그리고 진중한 선택</div>
-    <button class="center-btn" onclick="startGame()">어둠 속으로 발을 내딛는다</button>
+    <h1>bonfire : 새벽까지</h1>
+    <p>
+      1. 마우스 커서가 곧 <b>[손전등 빛]</b>입니다. 어둠 속에서 다가오는 귀신에게 빛을 계속 비춰 태워버리세요!<br>
+      2. 모닥불이 꺼지면 죽습니다. 우측 하단 <b>[🪵장작]</b>을 클릭해 쥐고, <b>[🔥모닥불]</b>에 던져 넣으세요!<br>
+      3. 아침(06:00 AM)이 될 때까지 살아남으면 승리합니다.
+    </p>
+    <button class="btn" onclick="startGame()">어둠 속으로 (게임 시작)</button>
+  </div>
+
+  <!-- 게임 오버 / 클리어 화면 -->
+  <div id="end-screen" class="overlay hidden">
+    <h1 id="end-title">GAME OVER</h1>
+    <p id="end-desc">모닥불이 꺼지고 어둠이 당신을 집어삼켰습니다.</p>
+    <button class="btn" onclick="startGame()">다시 도전하기</button>
   </div>
 </div>
 
 <script>
-  let typingTimer = null;
-  let tendencies = { S: 0, Sacrifice: 0, I: 0, T: 0 };
+  const container = document.getElementById("game-container");
+  const flashlight = document.getElementById("flashlight");
+  const holdingIcon = document.getElementById("holding-icon");
+  const fuelBar = document.getElementById("fuel-bar");
+  const clockDisplay = document.getElementById("clock-display");
+  const bonfire = document.getElementById("bonfire");
 
-  const STORY_TREE = {
-    "start": {
-      name: "나",
-      text: "스산한 밤바람이 숲을 매섭게 흔든다.\n모닥불의 타닥거리는 소리만이 고요함을 깨우고 있다...",
-      choices: [
-        { text: "바람막이가 될 만한 돌을 돌려쌓아 내 자리를 굳건히 한다.", next: "opening_2" },
-        { text: "불꽃의 색이 가끔 기묘한 파란색으로 변한다. 가만히 응시한다.", next: "opening_2" }
-      ]
-    },
-    "opening_2": {
-      name: "나",
-      text: "그때, 저 멀리 어둠 속에서 마른 나뭇잎을 밟는 거친 발소리가 들려온다.\n누군가 이 불빛을 향해 빠른 속도로 다가오고 있다!",
-      shake: true, // ★ 화면 진동 연출 트리거!
-      choices: [
-        { text: "길을 잃은 사람일 것이다. 불길을 키워 위치를 알려준다.", next: "npc1_1" },
-        { text: "무슨 위협이 될지 모른다. 손을 뻗어 단단한 나무 막대기를 쥔다.", next: "npc1_1" }
-      ]
-    },
-    "npc1_1": {
-      name: "추위에 떠는 나무꾼",
-      text: "'살았군... 불빛이 아니었다면 이대로 얼어 죽을 뻔했소.'\n사내가 얼굴에 동상이 걸린 채 굳은 표정으로 멈춰 섰다.\n'혹시 옆에 좀 앉아도 되겠소?'",
-      choices: [
-        { text: "'그러시오. 추운 밤인데 어서 앉아 몸을 녹이시오.'", next: "start" },
-        { text: "'손에 아무것도 쥐지 않은 것을 먼저 보여주시오.'", next: "start" }
-      ]
+  let gameActive = false;
+  let fuel = 100;
+  let timeMinutes = 4 * 60; // 04:00 AM (240분)
+  let holdingWood = false;
+  let monsters = [];
+  let mouseX = 490, mouseY = 270;
+  
+  let spawnTimer = null;
+  let clockTimer = null;
+  let loopId = null;
+
+  /* --- [마우스 손전등 & 장작 위치 추적] --- */
+  container.addEventListener("mousemove", (e) => {
+    const rect = container.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+
+    // 손전등 시야 마스크 중심점 이동
+    flashlight.style.background = `radial-gradient(circle 140px at ${mouseX}px ${mouseY}px, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 50%, rgba(5,4,4,0.96) 85%)`;
+
+    if (holdingWood) {
+      holdingIcon.style.left = mouseX + "px";
+      holdingIcon.style.top = mouseY + "px";
     }
-  };
+  });
 
-  function startGame() {
-    document.getElementById("start-screen").classList.add("hidden");
-    renderScene("start");
+  /* --- [장작 집기 & 모닥불에 넣기 액션] --- */
+  function grabWood() {
+    if (!gameActive) return;
+    holdingWood = true;
+    holdingIcon.style.display = "block";
+    holdingIcon.style.left = mouseX + "px";
+    holdingIcon.style.top = mouseY + "px";
   }
 
-  function renderScene(sceneId) {
-    const scene = STORY_TREE[sceneId];
-    if (!scene) return;
-
-    // 1. 화면 흔들림(Shake) 효과 처리
-    const container = document.getElementById("game-container");
-    if (scene.shake) {
-      container.classList.add("shake");
-      setTimeout(() => container.classList.remove("shake"), 500);
-    }
-
-    document.getElementById("char-name").innerText = scene.name;
-    const textEl = document.getElementById("char-text");
-    const choiceContainer = document.getElementById("choice-container");
+  function feedFire() {
+    if (!gameActive || !holdingWood) return;
+    holdingWood = false;
+    holdingIcon.style.display = "none";
     
-    // 선택지 숨기기 (타이핑 중에는 선택지 클릭 불가로 긴장감 유지)
-    choiceContainer.style.opacity = 0;
-    choiceContainer.innerHTML = "";
+    // 연료 회복 (최대 100)
+    fuel = Math.min(100, fuel + 35);
+    updateUI();
     
-    // 2. 텍스트 타이핑 효과 로직
-    textEl.innerText = "";
-    textEl.classList.add("typing-cursor");
-    if (typingTimer) clearInterval(typingTimer);
-
-    let idx = 0;
-    const fullText = scene.text;
-    
-    typingTimer = setInterval(() => {
-      if (idx < fullText.length) {
-        textEl.innerText += fullText[idx];
-        idx++;
-      } else {
-        // 타이핑 종료 시 커서 애니메이션 제거 및 선택지 페이드인
-        clearInterval(typingTimer);
-        textEl.classList.remove("typing-cursor");
-        showChoices(scene.choices);
-      }
-    }, 35); // ★ 글자당 35ms 속도 (조절 가능)
+    // 불꽃이 커지는 연출
+    bonfire.style.transform = "translate(-50%, -50%) scale(1.3)";
+    setTimeout(() => bonfire.style.transform = "translate(-50%, -50%) scale(1)", 150);
   }
 
-  function showChoices(choices) {
-    const choiceContainer = document.getElementById("choice-container");
-    choices.forEach(choice => {
-      const btn = document.createElement("button");
-      btn.className = "choice-btn";
-      btn.innerText = "▶ " + choice.text;
-      btn.onclick = () => renderScene(choice.next);
-      choiceContainer.appendChild(btn);
+  /* --- [귀신/괴물 스폰 로직] --- */
+  function spawnMonster() {
+    if (!gameActive) return;
+    
+    // 980x540 테두리 바깥의 랜덤한 위치에서 생성
+    let x, y;
+    const edge = Math.floor(Math.random() * 4);
+    if (edge === 0) { x = Math.random() * 980; y = -50; }        // 위
+    else if (edge === 1) { x = 980 + 50; y = Math.random() * 540; } // 오른쪽
+    else if (edge === 2) { x = Math.random() * 980; y = 540 + 50; } // 아래
+    else { x = -50; y = Math.random() * 540; }                      // 왼쪽
+
+    const el = document.createElement("div");
+    el.className = "monster";
+    el.innerText = "👀"; // [★ 이미지 교체 시 이 글자를 지우고 CSS로 배경 지정 ★]
+    container.appendChild(el);
+
+    monsters.push({
+      el: el, x: x, y: y,
+      hp: 100, // 빛을 받으면 깎이는 체력
+      speed: 0.8 + Math.random() * 0.6 // 다가오는 속도
     });
-    // 선택지 서서히 드러나기
-    choiceContainer.style.opacity = 1;
+  }
+
+  /* --- [메인 게임 물리 & 충돌 루프 (60FPS)] --- */
+  function gameLoop() {
+    if (!gameActive) return;
+
+    // 1. 모닥불 연료 자연 감소
+    fuel -= 0.05;
+    if (fuel <= 0) {
+      endGame(false, "모닥불이 꺼지고 칠흑 같은 어둠이 당신을 집어삼켰습니다.");
+      return;
+    }
+    updateUI();
+
+    // 2. 귀신 이동 및 손전등 빛(마우스) 충돌 처리
+    for (let i = monsters.length - 1; i >= 0; i--) {
+      let m = monsters[i];
+      
+      // 중앙 모닥불(490, 270)을 향해 이동
+      let dx = 490 - m.x;
+      let dy = 270 - m.y;
+      let distToFire = Math.hypot(dx, dy);
+
+      // 모닥불에 도달했을 때 (공격 성공)
+      if (distToFire < 50) {
+        fuel -= 30; // 연료 대폭 삭감!
+        container.classList.add("shake");
+        setTimeout(() => container.classList.remove("shake"), 400);
+        
+        m.el.remove();
+        monsters.splice(i, 1);
+        continue;
+      }
+
+      // 이동 좌표 적용
+      m.x += (dx / distToFire) * m.speed;
+      m.y += (dy / distToFire) * m.speed;
+      m.el.style.left = (m.x - 30) + "px";
+      m.y = m.y;
+      m.el.style.top = (m.y - 30) + "px";
+
+      // 마우스(손전등)와 귀신 사이의 거리 계산
+      let distToMouse = Math.hypot(mouseX - m.x, mouseY - m.y);
+      
+      // 손전등 빛 영역(반경 120px 이내)에 들어오면 타들어 감!
+      if (distToMouse < 120) {
+        m.hp -= 2.5;
+        m.speed = 0.2; // 빛을 받으면 느려짐
+        m.el.classList.add("burning");
+        
+        // 퇴치 완료
+        if (m.hp <= 0) {
+          m.el.remove();
+          monsters.splice(i, 1);
+          continue;
+        }
+      } else {
+        m.speed = 0.8; // 빛을 벗어나면 다시 빨라짐
+        m.el.classList.remove("burning");
+      }
+    }
+
+    loopId = requestAnimationFrame(gameLoop);
+  }
+
+  /* --- [시간 및 UI 업데이트] --- */
+  function updateUI() {
+    fuelBar.style.width = Math.max(0, fuel) + "%";
+    
+    // 연료양에 따라 모닥불 크기 미세 조절
+    let scale = 0.6 + (fuel / 100) * 0.4;
+    bonfire.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  }
+
+  function advanceClock() {
+    if (!gameActive) return;
+    timeMinutes += 2; // 1초마다 2분씩 흘러감 (총 60초 버티기)
+    
+    let hours = Math.floor(timeMinutes / 60);
+    let mins = timeMinutes % 60;
+    let timeStr = `0${hours}:${mins < 10 ? '0' + mins : mins} AM`;
+    clockDisplay.innerText = timeStr;
+
+    // 아침 6시 도달 시 승리!
+    if (timeMinutes >= 6 * 60) {
+      endGame(true, "아침 해가 떴습니다! 어둠 속의 괴물들이 물러나고 생존했습니다.");
+    }
+  }
+
+  /* --- [게임 시작 & 종료 제어] --- */
+  function startGame() {
+    // 초기화
+    monsters.forEach(m => m.el.remove());
+    monsters = [];
+    fuel = 100;
+    timeMinutes = 4 * 60;
+    holdingWood = false;
+    holdingIcon.style.display = "none";
+    
+    document.getElementById("start-screen").classList.add("hidden");
+    document.getElementById("end-screen").classList.add("hidden");
+    
+    gameActive = true;
+    updateUI();
+
+    // 타이머 및 루프 시작 (귀신은 1.8초마다 스폰)
+    clearInterval(spawnTimer);
+    clearInterval(clockTimer);
+    spawnTimer = setInterval(spawnMonster, 1800);
+    clockTimer = setInterval(advanceClock, 1000);
+    
+    cancelAnimationFrame(loopId);
+    loopId = requestAnimationFrame(gameLoop);
+  }
+
+  function endGame(victory, message) {
+    gameActive = false;
+    clearInterval(spawnTimer);
+    clearInterval(clockTimer);
+    cancelAnimationFrame(loopId);
+    holdingIcon.style.display = "none";
+
+    const titleEl = document.getElementById("end-title");
+    titleEl.innerText = victory ? "SURVIVED! (생존 성공)" : "GAME OVER";
+    titleEl.style.color = victory ? "#ffcc00" : "#ff3300";
+    document.getElementById("end-desc").innerText = message;
+    
+    document.getElementById("end-screen").classList.remove("hidden");
   }
 </script>
 </body>
