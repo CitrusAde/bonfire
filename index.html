@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>bonfire</title>
+  <style>
+    /* 기본 리셋 및 980x540 화면 고정 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0d0d0d;
+      color: #e0e0e0;
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+    #game-container {
+      width: 980px;
+      height: 540px;
+      background-color: #141414;
+      border: 2px solid #2a2a2a;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+      overflow: hidden;
+    }
+
+    /* 상단 상태 바 */
+    #status-bar {
+      height: 50px;
+      background-color: #1c1c1c;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 25px;
+      font-size: 14px;
+      color: #aaa;
+    }
+    .stat-item { display: flex; align-items: center; gap: 8px; }
+    .stat-value { font-weight: bold; color: #fff; }
+    .fire-meter { color: #ff6b35; }
+    .karma-meter { color: #4ecdc4; }
+    .doubt-meter { color: #ffe66d; }
+
+    /* 메인 화면 (로그 & 모닥불 연출) */
+    #main-screen {
+      flex: 1;
+      display: flex;
+      padding: 30px;
+      gap: 30px;
+      position: relative;
+    }
+    #fire-area {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-right: 1px dashed #2a2a2a;
+    }
+    #fire-icon {
+      font-size: 70px;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 0 15px rgba(255,107,53,0.6));
+      transition: all 0.5s ease;
+    }
+    #fire-desc {
+      font-size: 14px;
+      color: #888;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* 이벤트 로그 영역 */
+    #log-area {
+      flex: 1;
+      background-color: #0f0f0f;
+      border: 1px solid #222;
+      border-radius: 4px;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .log-entry { font-size: 16px; line-height: 1.6; color: #ccc; animation: fadeIn 0.5s ease; }
+    .log-entry.npc { color: #fff; font-weight: bold; border-left: 3px solid #ff6b35; padding-left: 10px; }
+    .log-entry.sys { color: #777; font-style: italic; }
+
+    /* 하단 컨트롤 & 버튼 영역 */
+    #control-panel {
+      min-height: 140px;
+      background-color: #1a1a1a;
+      border-top: 1px solid #2a2a2a;
+      padding: 20px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+    }
+    .btn {
+      background-color: #242424;
+      color: #dfdfdf;
+      border: 1px solid #3c3c3c;
+      padding: 12px 20px;
+      font-size: 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+    }
+    .btn:hover { background-color: #333; border-color: #555; transform: translateX(5px); }
+    .btn:active { background-color: #111; }
+
+    /* 화면 전환용 오버레이 (시작화면 & 팝업) */
+    .overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(13, 13, 13, 0.96);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      padding: 40px;
+    }
+    .hidden { display: none !important; }
+    h1 { font-size: 48px; color: #ff6b35; margin-bottom: 10px; letter-spacing: 4px; }
+    .subtitle { color: #888; margin-bottom: 40px; font-size: 18px; }
+    .center-btn-group { display: flex; gap: 15px; }
+    .center-btn {
+      padding: 15px 30px;
+      font-size: 16px;
+      background-color: #ff6b35;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .center-btn.secondary { background-color: #242424; border: 1px solid #444; }
+    .center-btn:hover { filter: brightness(1.1); }
+
+    /* 도감 팝업 */
+    #archive-popup {
+      background: #181818;
+      border: 1px solid #333;
+      width: 600px;
+      max-height: 400px;
+      padding: 30px;
+      border-radius: 6px;
+      overflow-y: auto;
+    }
+    #archive-popup h2 { margin-bottom: 20px; color: #fff; font-size: 24px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    .archive-item { margin-bottom: 15px; padding: 12px; background: #222; border-radius: 4px; }
+    .archive-title { font-weight: bold; color: #ff6b35; margin-bottom: 5px; }
+    .archive-desc { font-size: 14px; color: #aaa; line-height: 1.4; }
+    .locked { color: #555; font-style: italic; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <!-- 상단 상태바 -->
+  <div id="status-bar">
+    <div class="stat-item">🔥 장작: <span id="val-wood" class="stat-value">5</span>개</div>
+    <div class="stat-item">❤️ 호감도: <span id="val-karma" class="stat-value karma-meter">0</span></div>
+    <div class="stat-item">🎒 생존장비: <span id="val-gear" class="stat-value">0</span> / 3</div>
+    <div class="stat-item">👁️ 의심도: <span id="val-doubt" class="stat-value doubt-meter">0</span></div>
+    <div class="stat-item">⏳ 방문자: <span id="val-turn" class="stat-value">0</span> / 5</div>
+  </div>
+
+  <!-- 메인 게임 영역 -->
+  <div id="main-screen">
+    <div id="fire-area">
+      <div id="fire-icon">🔥</div>
+      <div id="fire-desc">불꽃이 적당한 온기로<br>어둠을 밀어내고 있습니다.</div>
+    </div>
+    <div id="log-area"></div>
+  </div>
+
+  <!-- 하단 선택지 영역 -->
+  <div id="control-panel"></div>
+
+  <!-- 시작 화면 오버레이 -->
+  <div id="start-screen" class="overlay">
+    <h1>bonfire</h1>
+    <div class="subtitle">어둠 속, 모닥불 그리고 다섯 명의 나그네</div>
+    <div class="center-btn-group">
+      <button class="center-btn" onclick="startGame()">게임 시작</button>
+      <button class="center-btn secondary" onclick="openArchive()">엔딩 도감</button>
+    </div>
+  </div>
+
+  <!-- 엔딩 도감 팝업 오버레이 -->
+  <div id="archive-screen" class="overlay hidden">
+    <div id="archive-popup">
+      <h2>📖 엔딩 도감</h2>
+      <div id="archive-list"></div>
+      <div style="text-align: right; margin-top: 20px;">
+        <button class="center-btn secondary" onclick="closeArchive()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 엔딩 결과 화면 오버레이 -->
+  <div id="ending-screen" class="overlay hidden">
+    <h1 id="end-title" style="font-size: 36px;"></h1>
+    <div id="end-desc" class="subtitle" style="max-width: 600px; text-align: center; line-height: 1.6; margin: 20px 0 40px 0;"></div>
+    <button class="center-btn" onclick="returnToTitle()">타이틀로 돌아가기</button>
+  </div>
+</div>
+
+<script>
+  /* --- [게임 상태 변수] --- */
+  let state = {
+    wood: 5,      // 장작 수
+    karma: 0,     // 이타주의 수치 (엔딩 2)
+    gear: 0,      // 생존 장비 (엔딩 1)
+    doubt: 0,     // 의심/진실 수치 (엔딩 3)
+    turn: 0       // 현재 만난 NPC 수 (최대 5)
+  };
+
+  /* --- [엔딩 데이터 및 도감 저장소] --- */
+  const ENDINGS = {
+    end1: {
+      id: "end1",
+      title: "[엔딩 1: 탈출]",
+      desc: "차가운 숲을 버리고 나 혼자 살아남아 문명세계로 복귀했습니다. 다른 이들의 비명은 뒤로한 채, 오직 당신의 생존만이 이 어둠 속에서 빛났습니다."
+    },
+    end2: {
+      id: "end2",
+      title: "[엔딩 2: 구원의 봉화]",
+      desc: "당신이 아낌없이 내어준 온기로 숲에 거대한 등대가 세워졌습니다. 수많은 피난민이 불빛을 따라 모여들었고, 당신은 그들의 영웅이자 안식처가 되었습니다."
+    },
+    end3: {
+      id: "end3",
+      title: "[엔딩 3: 고대의 봉인]",
+      desc: "모닥불의 진실을 눈치챈 당신은 심연을 마주했습니다. 불꽃을 거대하게 키워 봉인된 괴수를 태워버리거나, 불을 꺼서 영원한 어둠과 하나가 되는 길을 택했습니다."
+    }
+  };
+
+  // 로컬 스토리지에서 도감 해금 기록 불러오기
+  function getUnlockedEndings() {
+    const data = localStorage.getItem("bonfire_endings");
+    return data ? JSON.parse(data) : [];
+  }
+
+  function unlockEnding(id) {
+    const list = getUnlockedEndings();
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem("bonfire_endings", JSON.stringify(list));
+    }
+  }
+
+  /* --- [NPC 5인 시나리오 데이터] --- */
+  const NPCS = [
+    {
+      name: "떨고 있는 방랑자",
+      log: "어둠 속에서 바스락거리는 소리와 함께 누군가 다가옵니다. 남자는 몹시 떨며 모닥불로 손을 뻗습니다.\n'온기가... 필요하오. 내게 남은 건 이 작은 지도 조각뿐이지만, 장작 하나만 나눠줄 수 없겠소?'",
+      choices: [
+        {
+          text: "[생존주의] '지도를 내놓고 불을 쬐시오.' (장비 +1, 호감도 -1)",
+          effect: () => { state.gear += 1; state.karma -= 1; },
+          reply: "그는 씁쓸한 표정으로 지도를 건네고 잠시 불을 쬐다 사라졌습니다."
+        },
+        {
+          text: "[이타주의] '지도는 필요 없으니 장작을 가져가시오.' (장작 -1, 호감도 +2)",
+          effect: () => { state.wood -= 1; state.karma += 2; },
+          reply: "'정말 고맙소! 이 은혜는 잊지 않겠소.' 그가 깊이 머리를 숙입니다."
+        },
+        {
+          text: "[의심/진실] '왜 이 숲에는 나그네가 이리 많은가?' 물어본다. (의심도 +1)",
+          effect: () => { state.doubt += 1; },
+          reply: "'그저... 밤마다 이 불빛이 우리를 끌어당기고 있을 뿐이오.' 그는 기묘한 말을 남깁니다."
+        }
+      ]
+    },
+    {
+      name: "부상당한 사냥꾼",
+      log: "다리에 피를 흘리는 사냥꾼이 모닥불 옆에 쓰러집니다.\n'어둠 속에 *그것*들이 배회하고 있어. 내 배낭에 방한 코트와 생존 도구가 있네. 나를 치료해주면 절반을 주지... 아니면 내가 죽을 때까지 기다릴 텐가?'",
+      choices: [
+        {
+          text: "[생존주의] 치료해주지 않고 그의 배낭에서 방한 코트를 챙긴다. (장비 +1, 호감도 -2)",
+          effect: () => { state.gear += 1; state.karma -= 2; },
+          reply: "그는 원망스러운 눈빛으로 당신을 바라보다 이내 눈을 감았습니다."
+        },
+        {
+          text: "[이타주의] 내 장작을 태워 물을 끓이고 상처를 간호해준다. (장작 -2, 호감도 +3)",
+          effect: () => { state.wood -= 2; state.karma += 3; },
+          reply: "'당신 같은 사람이 아직 남아있을 줄이야...' 그가 기운을 차리며 미소 짓습니다."
+        },
+        {
+          text: "[의심/진실] '어둠 속의 그것들이 정확히 무엇인가?' (의심도 +2)",
+          effect: () => { state.doubt += 2; },
+          reply: "'이 모닥불 아래 잠든 것의 그림자라네... 불이 커질수록 놈들도 강해지지.'"
+        }
+      ]
+    },
+    {
+      name: "수상한 상인",
+      log: "커다란 짐보따리를 멘 상인이 불쑥 나타납니다.\n'흐흐, 이런 곳에 사람이 있다니. 숲을 빠져나갈 나침반과 식량이 필요한가? 당신의 장작이나... 당신의 선의를 대가로 팔지.'",
+      choices: [
+        {
+          text: "[생존주의] 상인을 협박하여 나침반을 강제로 빼앗는다. (장비 +1, 호감도 -1)",
+          effect: () => { state.gear += 1; state.karma -= 1; },
+          reply: "'미친 사람을 건드렸군!' 상인은 짐을 떨어뜨린 채 어둠 속으로 도망쳤습니다."
+        },
+        {
+          text: "[이타주의] 장작을 듬뿍 주며 상인도 춥지 않게 쉬어가라 권한다. (장작 -2, 호감도 +2)",
+          effect: () => { state.wood -= 2; state.karma += 2; },
+          reply: "'참으로 따뜻한 분이시군요. 이 은혜는 다른 이들에게도 전하겠습니다.'"
+        },
+        {
+          text: "[의심/진실] '이 불빛 아래 무엇이 묻혀 있는지 아는가?' (의심도 +2)",
+          effect: () => { state.doubt += 2; },
+          reply: "상인의 표정이 굳어집니다. '너무 많은 걸 궁금해하지 마시오. 불을 끄는 게 나을 수도 있으니.'"
+        }
+      ]
+    },
+    {
+      name: "눈 먼 노인",
+      log: "눈이 먼 노인이 지팡이를 짚고 모닥불 바로 앞까지 다가왔습니다.\n'불꽃 튀는 소리가 요란하구나. 하지만 젊은이, 이 불은 온기를 주는 불인가, 아니면 심연을 부르는 불인가?'",
+      choices: [
+        {
+          text: "[생존주의] 노인의 말을 무시하고 내일 떠날 준비만 한다. (장비 +1)",
+          effect: () => { state.gear += 1; },
+          reply: "'내 말은 들리지 않는 모양이군...' 노인이 쓸쓸히 발길을 돌립니다."
+        },
+        {
+          text: "[이타주의] 노인에게 자리를 내어주고 마지막 남은 장작을 모두 짚어 넣는다. (장작 -1, 호감도 +3)",
+          effect: () => { state.wood = Math.max(0, state.wood - 1); state.karma += 3; },
+          reply: "'참으로 거대한 따뜻함이구나. 네 온기가 사람들을 부를 것이다.'"
+        },
+        {
+          text: "[의심/진실] '심연이라니, 모닥불의 진짜 목적이 무엇인가?!' (의심도 +3)",
+          effect: () => { state.doubt += 3; },
+          reply: "'이 불은 제단이다. 네가 불을 짚일수록 땅 밑의 괴수가 깨어나고 있다네.'"
+        }
+      ]
+    },
+    {
+      name: "마지막 방랑자",
+      log: "숲에 폭풍이 몰아치기 시작합니다. 마지막으로 한 소녀가 모닥불로 뛰어들었습니다.\n'더 이상 버틸 수 없어요! 곧 숲 전체가 어둠과 추위에 집어삼켜질 거예요. 우리는 이제 어쩌죠?!'",
+      choices: [
+        {
+          text: "[생존주의] '난 모든 장비를 갖췄다. 혼자 이 숲을 떠나겠다.'",
+          effect: () => { state.gear += 1; },
+          reply: "당신은 배낭을 메고 냉정하게 어둠 속으로 발걸음을 옮겼습니다."
+        },
+        {
+          text: "[이타주의] '걱정 마라. 내가 이 불을 숲에서 가장 큰 봉화로 만들 테니!'",
+          effect: () => { state.karma += 3; },
+          reply: "당신은 주변의 모든 나무를 베어 모닥불에 던져 넣었습니다. 거대한 불기둥이 치솟습니다!"
+        },
+        {
+          text: "[의심/진실] 모닥불에 발을 걷어차 불을 완전히 꺼버린다.",
+          effect: () => { state.doubt += 3; },
+          reply: "불이 꺼지자, 땅의 떨림이 멈추며 고요하고 영원한 심연이 찾아왔습니다."
+        }
+      ]
+    }
+  ];
+
+  /* --- [게임 UI 및 제어 로직] --- */
+  function startGame() {
+    // 상태 초기화
+    state = { wood: 5, karma: 0, gear: 0, doubt: 0, turn: 0 };
+    document.getElementById("log-area").innerHTML = "";
+    document.getElementById("start-screen").classList.add("hidden");
+    document.getElementById("ending-screen").classList.add("hidden");
+    
+    updateUI();
+    addLog("sys", "어두운 숲속, 모닥불이 켜졌습니다. 나그네들이 불빛을 보고 다가올 것입니다...");
+    nextTurn();
+  }
+
+  function updateUI() {
+    document.getElementById("val-wood").innerText = state.wood;
+    document.getElementById("val-karma").innerText = state.karma;
+    document.getElementById("val-gear").innerText = state.gear;
+    document.getElementById("val-doubt").innerText = state.doubt;
+    document.getElementById("val-turn").innerText = state.turn;
+
+    // 불꽃 연출 변경
+    const icon = document.getElementById("fire-icon");
+    const desc = document.getElementById("fire-desc");
+    if (state.doubt >= 5) {
+      icon.innerText = "🔮";
+      icon.style.filter = "drop-shadow(0 0 20px rgba(180, 50, 255, 0.8))";
+      desc.innerHTML = "불꽃이 기괴한 보랏빛으로 타오르며<br>진실을 드러내고 있습니다.";
+    } else if (state.karma >= 5) {
+      icon.innerText = "🌟";
+      icon.style.filter = "drop-shadow(0 0 25px rgba(255, 220, 100, 0.9))";
+      desc.innerHTML = "거대한 온기가 주위를 감싸며<br>숲을 밝게 비추고 있습니다.";
+    } else {
+      icon.innerText = "🔥";
+      icon.style.filter = "drop-shadow(0 0 15px rgba(255,107,53,0.6))";
+      desc.innerHTML = "불꽃이 적당한 온기로<br>어둠을 밀어내고 있습니다.";
+    }
+  }
+
+  function addLog(type, text) {
+    const logArea = document.getElementById("log-area");
+    const entry = document.createElement("div");
+    entry.className = "log-entry " + type;
+    entry.innerText = text;
+    logArea.appendChild(entry);
+    logArea.scrollTop = logArea.scrollHeight; // 자동 스크롤
+  }
+
+  function nextTurn() {
+    if (state.turn >= NPCS.length) {
+      setTimeout(checkEnding, 1000);
+      return;
+    }
+
+    const npc = NPCS[state.turn];
+    state.turn += 1;
+    updateUI();
+
+    setTimeout(() => {
+      addLog("npc", `[${npc.name}]의 등장\n${npc.log}`);
+      renderChoices(npc);
+    }, 600);
+  }
+
+  function renderChoices(npc) {
+    const panel = document.getElementById("control-panel");
+    panel.innerHTML = ""; // 기존 버튼 제거
+
+    npc.choices.forEach(choice => {
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      btn.innerText = choice.text;
+      btn.onclick = () => {
+        panel.innerHTML = "<div style='color:#666; font-style:italic;'>선택의 결과를 지켜보는 중...</div>";
+        choice.effect();
+        updateUI();
+        addLog("sys", "👉 " + choice.text);
+        addLog("npc", choice.reply);
+        
+        setTimeout(nextTurn, 1500); // 1.5초 후 다음 턴
+      };
+      panel.appendChild(btn);
+    });
+  }
+
+  /* --- [엔딩 판정 로직] --- */
+  function checkEnding() {
+    let finalEnd = null;
+
+    // 가장 높은 수치에 따라 엔딩 결정
+    if (state.doubt >= state.karma && state.doubt >= state.gear && state.doubt >= 4) {
+      finalEnd = ENDINGS.end3;
+    } else if (state.karma >= state.gear && state.karma >= 4) {
+      finalEnd = ENDINGS.end2;
+    } else if (state.gear >= 3) {
+      finalEnd = ENDINGS.end1;
+    } else {
+      // 수치가 애매할 경우 가장 높은 것 기준으로 폴백
+      if (state.doubt > state.karma) finalEnd = ENDINGS.end3;
+      else if (state.karma > state.gear) finalEnd = ENDINGS.end2;
+      else finalEnd = ENDINGS.end1;
+    }
+
+    // 도감에 엔딩 해금 저장
+    unlockEnding(finalEnd.id);
+
+    // 엔딩 화면 출력
+    document.getElementById("end-title").innerText = finalEnd.title;
+    document.getElementById("end-desc").innerText = finalEnd.desc;
+    document.getElementById("ending-screen").classList.remove("hidden");
+  }
+
+  function returnToTitle() {
+    document.getElementById("ending-screen").classList.add("hidden");
+    document.getElementById("start-screen").classList.remove("hidden");
+  }
+
+  /* --- [엔딩 도감 팝업 로직] --- */
+  function openArchive() {
+    const list = document.getElementById("archive-list");
+    list.innerHTML = "";
+    const unlocked = getUnlockedEndings();
+
+    Object.values(ENDINGS).forEach(end => {
+      const item = document.createElement("div");
+      item.className = "archive-item";
+      if (unlocked.includes(end.id)) {
+        item.innerHTML = `<div class="archive-title">${end.title} [해금됨]</div><div class="archive-desc">${end.desc}</div>`;
+      } else {
+        item.innerHTML = `<div class="archive-title locked">??? [미해금]</div><div class="archive-desc locked">아직 이 결말에 도달하지 못했습니다. 다른 선택을 시도해 보세요.</div>`;
+      }
+      list.appendChild(item);
+    });
+
+    document.getElementById("archive-screen").classList.remove("hidden");
+  }
+
+  function closeArchive() {
+    document.getElementById("archive-screen").classList.add("hidden");
+  }
+</script>
+</body>
+</html>
