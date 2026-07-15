@@ -2,462 +2,377 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>bonfire - Survive Until Dawn (Audio Version)</title>
+  <title>Quarter-View Arena (LoL Style)</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #050505; color: #fff;
+      background-color: #111; color: #fff;
       font-family: 'Malgun Gothic', sans-serif;
       display: flex; justify-content: center; align-items: center;
       height: 100vh; overflow: hidden; user-select: none;
-      cursor: crosshair;
     }
-
     #game-container {
-      width: 980px; height: 540px; position: relative; overflow: hidden;
-      border: 4px solid #1c1815; box-shadow: 0 0 50px rgba(0,0,0,0.95);
-      background-color: #0c0908;
+      width: 980px; height: 540px; position: relative;
+      border: 3px solid #333; box-shadow: 0 0 40px rgba(0,0,0,0.9);
+      background-color: #1a1c23; /* 투기장 바닥 색 */
+      cursor: crosshair; overflow: hidden;
     }
-
-    .shake { animation: shake-anim 0.4s both; }
-    @keyframes shake-anim {
-      0%, 100% { transform: translate(0, 0); }
-      20%, 60% { transform: translate(-10px, 6px); }
-      40%, 80% { transform: translate(10px, -6px); }
-    }
-
-    #flashlight {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 5;
-      background: radial-gradient(circle 140px at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 50%, rgba(5,4,4,0.95) 85%);
-    }
-
+    canvas { display: block; width: 100%; height: 100%; }
+    
+    /* 하단 스킬 UI */
     #ui-bar {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 15px; z-index: 10; pointer-events: none;
+    }
+    .skill-icon {
+      width: 60px; height: 60px; background: #222; border: 2px solid #555;
+      border-radius: 8px; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; font-weight: bold;
+      position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .skill-key { font-size: 14px; color: #ffcc00; margin-bottom: 2px; }
+    .skill-name { font-size: 11px; color: #aaa; }
+    .cooldown-overlay {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
+      background: rgba(0, 0, 0, 0.75); transition: height 0.05s linear;
+      display: flex; justify-content: center; align-items: center;
+      color: #fff; font-size: 18px; font-family: monospace;
+    }
+    
+    /* 점수 및 체력 표시 */
+    #top-bar {
       position: absolute; top: 15px; left: 20px; right: 20px;
-      display: flex; justify-content: space-between; align-items: center;
-      z-index: 10; font-weight: bold; font-size: 18px; text-shadow: 0 0 10px #000;
+      display: flex; justify-content: space-between; font-size: 18px;
+      font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none;
     }
-    .fuel-meter { display: flex; align-items: center; gap: 10px; }
-    #fuel-bar-bg { width: 200px; height: 16px; background: #332; border: 2px solid #554; border-radius: 8px; overflow: hidden; }
-    #fuel-bar { width: 100%; height: 100%; background: #ff5500; transition: width 0.2s; }
-    .clock { font-size: 24px; color: #ffcc00; font-family: monospace; }
-
-    #bonfire {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 100px; height: 100px; z-index: 2; display: flex; justify-content: center; align-items: center;
-      font-size: 70px; cursor: pointer; filter: drop-shadow(0 0 30px rgba(255, 85, 0, 0.9));
-      transition: transform 0.1s;
-    }
-    #bonfire:active { transform: translate(-50%, -50%) scale(0.95); }
-
-    #wood-pile {
-      position: absolute; bottom: 20px; right: 30px; width: 80px; height: 80px; z-index: 6;
-      background-color: #2b1f17; border: 2px solid #543d2b; border-radius: 10px;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      cursor: pointer; font-size: 32px; box-shadow: 0 0 15px rgba(0,0,0,0.8); transition: all 0.15s;
-    }
-    #wood-pile:hover { background-color: #3d2c20; transform: scale(1.05); }
-    #wood-label { font-size: 12px; color: #aaa; margin-top: 4px; }
-
-    #holding-icon {
-      position: absolute; pointer-events: none; z-index: 20;
-      font-size: 36px; display: none; transform: translate(-50%, -50%);
-      filter: drop-shadow(0 0 10px #000);
-    }
-
-    .monster {
-      position: absolute; width: 60px; height: 60px; z-index: 3; pointer-events: none;
-      display: flex; justify-content: center; align-items: center; font-size: 40px;
-      filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8)); transition: filter 0.1s;
-    }
-    .burning { filter: drop-shadow(0 0 25px rgba(255, 255, 255, 1)) brightness(2); }
-
-    .overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(5, 4, 4, 0.95); z-index: 30;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-    }
-    .hidden { display: none !important; }
-    h1 { font-size: 50px; color: #ff5500; margin-bottom: 15px; letter-spacing: 4px; }
-    p { font-size: 16px; color: #aaa; margin-bottom: 30px; text-align: center; line-height: 1.6; }
-    .btn {
-      padding: 15px 40px; font-size: 18px; font-weight: bold;
-      background: #ff5500; color: #fff; border: none; border-radius: 5px;
-      cursor: pointer; transition: 0.2s;
-    }
-    .btn:hover { background: #ff7733; transform: scale(1.05); }
+    #hp-bar-bg { width: 200px; height: 18px; background: #333; border: 2px solid #000; border-radius: 9px; overflow: hidden; display: inline-block; vertical-align: middle; }
+    #hp-bar { width: 100%; height: 100%; background: #2ecc71; transition: width 0.1s; }
   </style>
 </head>
 <body>
 
 <div id="game-container">
-  <div id="flashlight"></div>
+  <canvas id="gameCanvas" width="980" height="540"></canvas>
+  
+  <div id="top-bar">
+    <div>❤️ HP: <div id="hp-bar-bg"><div id="hp-bar"></div></div></div>
+    <div>⚔️ 처치한 적: <span id="score" style="color:#ffcc00;">0</span></div>
+  </div>
+
   <div id="ui-bar">
-    <div class="fuel-meter">
-      <span>🔥 모닥불:</span>
-      <div id="fuel-bar-bg"><div id="fuel-bar"></div></div>
+    <div class="skill-icon" id="skill-q">
+      <div class="skill-key">Q</div>
+      <div class="skill-name">에너지탄</div>
+      <div class="cooldown-overlay" id="cd-q"></div>
     </div>
-    <div class="clock" id="clock-display">04:00 AM</div>
-  </div>
-
-  <div id="bonfire" onclick="feedFire()">🔥</div>
-  <div id="wood-pile" onclick="grabWood()">🪵<span id="wood-label">장작 집기</span></div>
-  <div id="holding-icon">🪵</div>
-
-  <div id="start-screen" class="overlay">
-    <h1>bonfire : 새벽까지</h1>
-    <p>
-      <b>🔊 스피커 소리를 켜주세요! (실시간 ASMR 사운드 지원)</b><br><br>
-      1. 마우스 커서(손전등 빛)로 어둠 속에서 다가오는 귀신을 비춰 지져버리세요!<br>
-      2. 모닥불이 꺼지면 죽습니다. 우측 하단 <b>[🪵장작]</b>을 집어 <b>[🔥모닥불]</b>에 던지세요!<br>
-      3. 아침(06:00 AM)까지 생존하면 승리합니다.
-    </p>
-    <button class="btn" onclick="startGame()">어둠 속으로 (게임 시작)</button>
-  </div>
-
-  <div id="end-screen" class="overlay hidden">
-    <h1 id="end-title">GAME OVER</h1>
-    <p id="end-desc">모닥불이 꺼지고 어둠이 당신을 집어삼켰습니다.</p>
-    <button class="btn" onclick="startGame()">다시 도전하기</button>
+    <div class="skill-icon" style="opacity: 0.4;">
+      <div class="skill-key">W</div>
+      <div class="skill-name">(잠금)</div>
+    </div>
+    <div class="skill-icon" style="opacity: 0.4;">
+      <div class="skill-key">E</div>
+      <div class="skill-name">(잠금)</div>
+    </div>
+    <div class="skill-icon" style="border-color: #e74c3c; opacity: 0.4;">
+      <div class="skill-key" style="color:#e74c3c;">R</div>
+      <div class="skill-name">궁극기</div>
+    </div>
   </div>
 </div>
 
 <script>
-  /* =========================================================
-     ★ Web Audio API 실시간 사운드 생성 엔진 (No Assets!) ★
-     ========================================================= */
-  let audioCtx = null;
-  let windOsc = null;
-  let windGain = null;
-  let isBurningSoundPlaying = false;
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const hpBar = document.getElementById("hp-bar");
+  const scoreEl = document.getElementById("score");
+  const cdQEl = document.getElementById("cd-q");
 
-  function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-  }
-
-  // 1. 스산한 배경 바람 소리 (드론 BGM)
-  function startWindBGM() {
-    if (windOsc) return;
-    windOsc = audioCtx.createOscillator();
-    windGain = audioCtx.createGain();
-    
-    windOsc.type = 'sawtooth';
-    windOsc.frequency.setValueAtTime(45, audioCtx.currentTime); // 낮은 저주파
-    
-    // 필터를 걸어 웅웅거리는 바람 소리로 변조
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(120, audioCtx.currentTime);
-    
-    windGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    
-    windOsc.connect(filter);
-    filter.connect(windGain);
-    windGain.connect(audioCtx.destination);
-    windOsc.start();
-  }
-
-  function stopWindBGM() {
-    if (windOsc) {
-      windOsc.stop();
-      windOsc.disconnect();
-      windOsc = null;
-    }
-  }
-
-  // 2. 모닥불 타닥거리는 ASMR 효과음 (랜덤 파열음)
-  function playCrackling() {
-    if (!audioCtx || !gameActive) return;
-    
-    // 백색 소음(Noise) 생성
-    const bufferSize = audioCtx.sampleRate * 0.05; // 0.05초 아주 짧은 소리
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(800 + Math.random() * 1000, audioCtx.currentTime);
-
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioCtx.destination);
-    noise.start();
-  }
-
-  // 3. 장작을 불에 넣었을 때 화르륵! 소리 (Whoosh)
-  function playFireWhoosh() {
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
-    
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.3);
-  }
-
-  // 4. 귀신이 손전등 빛에 지져질 때 소리 (Sizzle / Hiss)
-  function playGhostSizzle() {
-    if (!audioCtx || isBurningSoundPlaying) return;
-    isBurningSoundPlaying = true;
-
-    const bufferSize = audioCtx.sampleRate * 0.1;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.setValueAtTime(2500, audioCtx.currentTime); // 날카로운 치이익 소리
-
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioCtx.destination);
-    noise.start();
-
-    setTimeout(() => { isBurningSoundPlaying = false; }, 100);
-  }
-
-  // 5. 게임오버 충격음
-  function playGameOverSound() {
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.8);
-    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.8);
-  }
-
-
-  /* =========================================================
-     ★ 메인 게임 로직 ★
-     ========================================================= */
-  const container = document.getElementById("game-container");
-  const flashlight = document.getElementById("flashlight");
-  const holdingIcon = document.getElementById("holding-icon");
-  const fuelBar = document.getElementById("fuel-bar");
-  const clockDisplay = document.getElementById("clock-display");
-  const bonfire = document.getElementById("bonfire");
-
-  let gameActive = false;
-  let fuel = 100;
-  let timeMinutes = 4 * 60;
-  let holdingWood = false;
-  let monsters = [];
-  let mouseX = 490, mouseY = 270;
+  /* --- [게임 전역 상태] --- */
+  let score = 0;
+  let mouseX = 0, mouseY = 0;
   
-  let spawnTimer = null;
-  let clockTimer = null;
-  let asmrTimer = null;
-  let loopId = null;
+  // 플레이어 (챔피언)
+  const player = {
+    x: 490, y: 270, radius: 18,
+    targetX: 490, targetY: 270,
+    speed: 4.5, hp: 100, maxHp: 100,
+    color: "#3498db"
+  };
 
-  container.addEventListener("mousemove", (e) => {
-    const rect = container.getBoundingClientRect();
+  // 우클릭 이동 모션 이펙트 (초록색 클릭 표식)
+  let clickMarker = { x: 0, y: 0, radius: 0, alpha: 0 };
+
+  // 투사체 (스킬 & 공격) 및 적 리스트
+  let bullets = [];
+  let enemies = [];
+  let particles = [];
+
+  // 스킬 쿨타임 (Q)
+  let qCooldown = 0;
+  const Q_MAX_CD = 40; // 프레임 기준 (약 0.65초)
+
+  /* --- [입력 처리 (롤 컨트롤)] --- */
+  // 마우스 위치 추적
+  canvas.addEventListener("mousemove", (e) => {
+    const rect = canvas.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
     mouseY = e.clientY - rect.top;
-    flashlight.style.background = `radial-gradient(circle 140px at ${mouseX}px ${mouseY}px, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 50%, rgba(5,4,4,0.96) 85%)`;
+  });
 
-    if (holdingWood) {
-      holdingIcon.style.left = mouseX + "px";
-      holdingIcon.style.top = mouseY + "px";
+  // ★ 브라우저 우클릭 메뉴 방지 및 우클릭 이동 구현!
+  canvas.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    player.targetX = e.clientX - rect.left;
+    player.targetY = e.clientY - rect.top;
+
+    // 우클릭 지점에 롤처럼 표식 애니메이션 생성
+    clickMarker = { x: player.targetX, y: player.targetY, radius: 5, alpha: 1 };
+  });
+
+  // 키보드 스킬 (Q) 발동
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "q" || e.key === "Q" || e.key === "ㅂ") {
+      castSkillQ();
     }
   });
 
-  function grabWood() {
-    if (!gameActive) return;
-    holdingWood = true;
-    holdingIcon.style.display = "block";
-    holdingIcon.style.left = mouseX + "px";
-    holdingIcon.style.top = mouseY + "px";
-  }
+  // 좌클릭으로도 Q 스킬 사용 가능하게 (편의성)
+  canvas.addEventListener("click", () => { castSkillQ(); });
 
-  function feedFire() {
-    if (!gameActive || !holdingWood) return;
-    holdingWood = false;
-    holdingIcon.style.display = "none";
-    fuel = Math.min(100, fuel + 35);
-    updateUI();
+  function castSkillQ() {
+    if (qCooldown > 0) return; // 쿨타임 중이면 발동 불가
+    qCooldown = Q_MAX_CD;
+
+    // 플레이어에서 마우스 커서 방향으로 각도 계산 (논타겟팅)
+    const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
     
-    playFireWhoosh(); // ★ 장작 넣는 소리 재생!
-
-    bonfire.style.transform = "translate(-50%, -50%) scale(1.3)";
-    setTimeout(() => bonfire.style.transform = "translate(-50%, -50%) scale(1)", 150);
+    bullets.push({
+      x: player.x, y: player.y,
+      vx: Math.cos(angle) * 12, // 빠른 투사체 속도
+      vy: Math.sin(angle) * 12,
+      radius: 8, color: "#00ffff", range: 500, traveled: 0
+    });
   }
 
-  function spawnMonster() {
-    if (!gameActive) return;
+  /* --- [적 스폰 로직] --- */
+  function spawnEnemy() {
+    // 투기장 바깥 가장자리에서 생성
     let x, y;
-    const edge = Math.floor(Math.random() * 4);
-    if (edge === 0) { x = Math.random() * 980; y = -50; }
-    else if (edge === 1) { x = 980 + 50; y = Math.random() * 540; }
-    else if (edge === 2) { x = Math.random() * 980; y = 540 + 50; }
-    else { x = -50; y = Math.random() * 540; }
-
-    const el = document.createElement("div");
-    el.className = "monster";
-    el.innerText = "👀";
-    container.appendChild(el);
-
-    monsters.push({ el: el, x: x, y: y, hp: 100, speed: 0.8 + Math.random() * 0.6 });
-  }
-
-  function gameLoop() {
-    if (!gameActive) return;
-
-    fuel -= 0.05;
-    if (fuel <= 0) {
-      endGame(false, "모닥불이 꺼지고 칠흑 같은 어둠이 당신을 집어삼켰습니다.");
-      return;
+    if (Math.random() < 0.5) {
+      x = Math.random() < 0.5 ? -30 : canvas.width + 30;
+      y = Math.random() * canvas.height;
+    } else {
+      x = Math.random() * canvas.width;
+      y = Math.random() < 0.5 ? -30 : canvas.height + 30;
     }
-    updateUI();
 
-    for (let i = monsters.length - 1; i >= 0; i--) {
-      let m = monsters[i];
-      let dx = 490 - m.x;
-      let dy = 270 - m.y;
-      let distToFire = Math.hypot(dx, dy);
+    enemies.push({
+      x: x, y: y, radius: 16,
+      speed: 1.8 + Math.random() * 0.8,
+      hp: 2, color: "#e74c3c"
+    });
+  }
+  setInterval(spawnEnemy, 800); // 0.8초마다 적 스폰
 
-      if (distToFire < 50) {
-        fuel -= 30;
-        container.classList.add("shake");
-        setTimeout(() => container.classList.remove("shake"), 400);
-        m.el.remove();
-        monsters.splice(i, 1);
-        continue;
+  /* --- [메인 게임 루프 (60FPS)] --- */
+  function update() {
+    // 1. 플레이어 우클릭 목적지로 이동
+    const dx = player.targetX - player.x;
+    const dy = player.targetY - player.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > player.speed) {
+      player.x += (dx / dist) * player.speed;
+      player.y += (dy / dist) * player.speed;
+    } else {
+      player.x = player.targetX;
+      player.y = player.targetY;
+    }
+
+    // 2. Q 스킬 쿨타임 감소
+    if (qCooldown > 0) {
+      qCooldown--;
+      const pct = (qCooldown / Q_MAX_CD) * 100;
+      cdQEl.style.height = pct + "%";
+      cdQEl.innerText = (qCooldown / 60).toFixed(1);
+    } else {
+      cdQEl.style.height = "0%";
+      cdQEl.innerText = "";
+    }
+
+    // 3. 투사체 이동 및 충돌
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      let b = bullets[i];
+      b.x += b.vx; b.y += b.vy;
+      b.traveled += Math.hypot(b.vx, b.vy);
+
+      // 사거리 초과 시 제거
+      if (b.traveled > b.range || b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+        bullets.splice(i, 1); continue;
       }
 
-      m.x += (dx / distToFire) * m.speed;
-      m.y += (dy / distToFire) * m.speed;
-      m.el.style.left = (m.x - 30) + "px";
-      m.el.style.top = (m.y - 30) + "px";
-
-      let distToMouse = Math.hypot(mouseX - m.x, mouseY - m.y);
-      
-      if (distToMouse < 120) {
-        m.hp -= 2.5;
-        m.speed = 0.2;
-        m.el.classList.add("burning");
-        
-        playGhostSizzle(); // ★ 빛에 지져질 때 치이익 소리!
-
-        if (m.hp <= 0) {
-          m.el.remove();
-          monsters.splice(i, 1);
-          continue;
+      // 적과 투사체 충돌 판정
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        let e = enemies[j];
+        if (Math.hypot(b.x - e.x, b.y - e.y) < b.radius + e.radius) {
+          e.hp--;
+          createParticles(e.x, e.y, "#ffcc00", 6); // 타격 파티클
+          bullets.splice(i, 1);
+          
+          if (e.hp <= 0) {
+            createParticles(e.x, e.y, "#e74c3c", 15); // 처치 파티클(피)
+            enemies.splice(j, 1);
+            score++;
+            scoreEl.innerText = score;
+          }
+          break;
         }
-      } else {
-        m.speed = 0.8;
-        m.el.classList.remove("burning");
       }
     }
 
-    loopId = requestAnimationFrame(gameLoop);
-  }
+    // 4. 적 이동 (플레이어 추적) 및 플레이어와 충돌
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      let e = enemies[i];
+      const edx = player.x - e.x;
+      const edy = player.y - e.y;
+      const edist = Math.hypot(edx, edy);
 
-  function updateUI() {
-    fuelBar.style.width = Math.max(0, fuel) + "%";
-    let scale = 0.6 + (fuel / 100) * 0.4;
-    bonfire.style.transform = `translate(-50%, -50%) scale(${scale})`;
-  }
+      e.x += (edx / edist) * e.speed;
+      e.y += (edy / edist) * e.speed;
 
-  function advanceClock() {
-    if (!gameActive) return;
-    timeMinutes += 2;
-    let hours = Math.floor(timeMinutes / 60);
-    let mins = timeMinutes % 60;
-    clockDisplay.innerText = `0${hours}:${mins < 10 ? '0' + mins : mins} AM`;
+      // 플레이어 피격!
+      if (edist < player.radius + e.radius) {
+        player.hp -= 0.5;
+        hpBar.style.width = Math.max(0, player.hp) + "%";
+        if (player.hp <= 0) {
+          alert("사망했습니다! 처치한 적: " + score);
+          location.reload();
+        }
+      }
+    }
 
-    if (timeMinutes >= 6 * 60) {
-      endGame(true, "아침 해가 떴습니다! 어둠 속의 괴물들이 물러나고 생존했습니다.");
+    // 5. 파티클 업데이트
+    for (let i = particles.length - 1; i >= 0; i--) {
+      let p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.alpha -= 0.04;
+      if (p.alpha <= 0) particles.splice(i, 1);
     }
   }
 
-  function startGame() {
-    initAudio();     // ★ 오디오 엔진 활성화
-    startWindBGM();  // ★ 스산한 바람 소리 시작
-
-    monsters.forEach(m => m.el.remove());
-    monsters = [];
-    fuel = 100;
-    timeMinutes = 4 * 60;
-    holdingWood = false;
-    holdingIcon.style.display = "none";
-    
-    document.getElementById("start-screen").classList.add("hidden");
-    document.getElementById("end-screen").classList.add("hidden");
-    
-    gameActive = true;
-    updateUI();
-
-    clearInterval(spawnTimer);
-    clearInterval(clockTimer);
-    clearInterval(asmrTimer);
-
-    spawnTimer = setInterval(spawnMonster, 1800);
-    clockTimer = setInterval(advanceClock, 1000);
-    
-    // ★ 0.1~0.4초마다 모닥불 타닥거리는 ASMR 랜덤 재생
-    asmrTimer = setInterval(() => {
-      if (Math.random() > 0.3) playCrackling();
-    }, 150);
-    
-    cancelAnimationFrame(loopId);
-    loopId = requestAnimationFrame(gameLoop);
+  function createParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: x, y: y,
+        vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
+        radius: Math.random() * 4 + 2, color: color, alpha: 1
+      } );
+    }
   }
 
-  function endGame(victory, message) {
-    gameActive = false;
-    stopWindBGM(); // ★ 바람 소리 종료
-    if (!victory) playGameOverSound(); // ★ 게임오버 사운드
+  /* --- [화면 그리기 (쿼터뷰 2.5D 스타일)] --- */
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    clearInterval(spawnTimer);
-    clearInterval(clockTimer);
-    clearInterval(asmrTimer);
-    cancelAnimationFrame(loopId);
-    holdingIcon.style.display = "none";
+    // 1. 투기장 바닥 그리드 (쿼터뷰 공간감 연출)
+    ctx.strokeStyle = "#22252e";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 40) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 40) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
 
-    const titleEl = document.getElementById("end-title");
-    titleEl.innerText = victory ? "SURVIVED! (생존 성공)" : "GAME OVER";
-    titleEl.style.color = victory ? "#ffcc00" : "#ff3300";
-    document.getElementById("end-desc").innerText = message;
-    
-    document.getElementById("end-screen").classList.remove("hidden");
+    // 2. 우클릭 이동 표식 (녹색 동그라미 확장이펙트)
+    if (clickMarker.alpha > 0) {
+      ctx.save();
+      ctx.strokeStyle = `rgba(46, 204, 113, ${clickMarker.alpha})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      // 타원(쿼터뷰 바닥 원)으로 그리기
+      ctx.ellipse(clickMarker.x, clickMarker.y, clickMarker.radius, clickMarker.radius * 0.6, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      clickMarker.radius += 1.5;
+      clickMarker.alpha -= 0.05;
+    }
+
+    // 3. 쿼터뷰의 핵심: Y축 기준 정렬 (Z-Order)
+    // 아래쪽에 있는 오브젝트를 나중에 그려야 입체감이 겹쳐 보임!
+    let renderList = [
+      { type: 'player', y: player.y },
+      ...enemies.map(e => ({ type: 'enemy', data: e, y: e.y })),
+      ...bullets.map(b => ({ type: 'bullet', data: b, y: b.y }))
+    ];
+    renderList.sort((a, b) => a.y - b.y);
+
+    for (let item of renderList) {
+      if (item.type === 'player') {
+        // 플레이어 그림자 (바닥 타원)
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.beginPath();
+        ctx.ellipse(player.x, player.y + 14, 16, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 플레이어 몸체
+        ctx.fillStyle = player.color;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+
+        // 시선 방향 (마우스를 바라보는 무기/포신)
+        const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+        ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        ctx.lineTo(player.x + Math.cos(angle) * 26, player.y + Math.sin(angle) * 26);
+        ctx.stroke();
+
+      } else if (item.type === 'enemy') {
+        let e = item.data;
+        // 적 그림자
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.beginPath();
+        ctx.ellipse(e.x, e.y + 12, 14, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 적 몸체
+        ctx.fillStyle = e.color;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#900"; ctx.lineWidth = 2; ctx.stroke();
+
+      } else if (item.type === 'bullet') {
+        let b = item.data;
+        ctx.fillStyle = b.color;
+        ctx.shadowColor = "#00ffff"; ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0; // 그림자 리셋
+      }
+    }
+
+    // 4. 타격 파티클 그리기
+    for (let p of particles) {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
   }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  loop();
 </script>
 </body>
 </html>
