@@ -2,51 +2,62 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Quarter-View Arena (LoL Style)</title>
+  <title>Quarter-View Ghosts 'n Goblins</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #111; color: #fff;
+      background-color: #08080a; color: #fff;
       font-family: 'Malgun Gothic', sans-serif;
       display: flex; justify-content: center; align-items: center;
       height: 100vh; overflow: hidden; user-select: none;
     }
     #game-container {
       width: 980px; height: 540px; position: relative;
-      border: 3px solid #333; box-shadow: 0 0 40px rgba(0,0,0,0.9);
-      background-color: #1a1c23; /* 투기장 바닥 색 */
+      border: 4px solid #2d241e; box-shadow: 0 0 50px rgba(0,0,0,0.95);
+      background-color: #12131a; /* 마계 묘지 바닥 색 */
       cursor: crosshair; overflow: hidden;
     }
     canvas { display: block; width: 100%; height: 100%; }
+
+    /* 화면 진동 효과 (피격 시) */
+    .shake { animation: shake-anim 0.4s both; }
+    @keyframes shake-anim {
+      0%, 100% { transform: translate(0, 0); }
+      20%, 60% { transform: translate(-12px, 8px); }
+      40%, 80% { transform: translate(12px, -8px); }
+    }
     
-    /* 하단 스킬 UI */
+    /* 상단 마계촌 스타일 UI */
+    #top-bar {
+      position: absolute; top: 15px; left: 20px; right: 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 20px; font-weight: bold; text-shadow: 0 2px 5px #000; pointer-events: none;
+    }
+    #armor-status {
+      padding: 6px 15px; border-radius: 4px; background: rgba(0,0,0,0.6);
+      border: 2px solid #555; display: flex; align-items: center; gap: 10px;
+    }
+    .armor-silver { color: #00e5ff; border-color: #00e5ff !important; }
+    .armor-boxer { color: #ff3300; border-color: #ff3300 !important; animation: blink 0.5s infinite; }
+    @keyframes blink { 50% { opacity: 0.5; } }
+
+    /* 하단 무기 스킬 UI */
     #ui-bar {
       position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
       display: flex; gap: 15px; z-index: 10; pointer-events: none;
     }
-    .skill-icon {
-      width: 60px; height: 60px; background: #222; border: 2px solid #555;
-      border-radius: 8px; display: flex; flex-direction: column;
-      justify-content: center; align-items: center; font-weight: bold;
-      position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    .skill-box {
+      width: 64px; height: 64px; background: rgba(20,20,25,0.9);
+      border: 2px solid #665; border-radius: 6px; display: flex;
+      flex-direction: column; justify-content: center; align-items: center;
+      position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.8);
     }
-    .skill-key { font-size: 14px; color: #ffcc00; margin-bottom: 2px; }
-    .skill-name { font-size: 11px; color: #aaa; }
-    .cooldown-overlay {
+    .skill-key { font-size: 14px; color: #ffcc00; font-weight: bold; }
+    .skill-name { font-size: 11px; color: #ccc; margin-top: 2px; }
+    .cooldown-bar {
       position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-      background: rgba(0, 0, 0, 0.75); transition: height 0.05s linear;
-      display: flex; justify-content: center; align-items: center;
-      color: #fff; font-size: 18px; font-family: monospace;
+      background: rgba(255, 50, 0, 0.7); transition: height 0.05s linear;
     }
-    
-    /* 점수 및 체력 표시 */
-    #top-bar {
-      position: absolute; top: 15px; left: 20px; right: 20px;
-      display: flex; justify-content: space-between; font-size: 18px;
-      font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none;
-    }
-    #hp-bar-bg { width: 200px; height: 18px; background: #333; border: 2px solid #000; border-radius: 9px; overflow: hidden; display: inline-block; vertical-align: middle; }
-    #hp-bar { width: 100%; height: 100%; background: #2ecc71; transition: width 0.1s; }
   </style>
 </head>
 <body>
@@ -55,27 +66,22 @@
   <canvas id="gameCanvas" width="980" height="540"></canvas>
   
   <div id="top-bar">
-    <div>❤️ HP: <div id="hp-bar-bg"><div id="hp-bar"></div></div></div>
-    <div>⚔️ 처치한 적: <span id="score" style="color:#ffcc00;">0</span></div>
+    <div id="armor-status" class="armor-silver">
+      <span id="armor-icon">🛡️</span>
+      <span id="armor-text">상태: 은빛 갑옷 (피격 1회 보호)</span>
+    </div>
+    <div>💀 처치한 마물: <span id="score" style="color:#ffcc00;">0</span></div>
   </div>
 
   <div id="ui-bar">
-    <div class="skill-icon" id="skill-q">
-      <div class="skill-key">Q</div>
-      <div class="skill-name">에너지탄</div>
-      <div class="cooldown-overlay" id="cd-q"></div>
+    <div class="skill-box">
+      <div class="skill-key">좌클릭</div>
+      <div class="skill-name">기사의 투창</div>
     </div>
-    <div class="skill-icon" style="opacity: 0.4;">
-      <div class="skill-key">W</div>
-      <div class="skill-name">(잠금)</div>
-    </div>
-    <div class="skill-icon" style="opacity: 0.4;">
-      <div class="skill-key">E</div>
-      <div class="skill-name">(잠금)</div>
-    </div>
-    <div class="skill-icon" style="border-color: #e74c3c; opacity: 0.4;">
-      <div class="skill-key" style="color:#e74c3c;">R</div>
-      <div class="skill-name">궁극기</div>
+    <div class="skill-box" style="border-color:#ff5500;">
+      <div class="skill-key" style="color:#ff5500;">우클릭</div>
+      <div class="skill-name">회전 대검</div>
+      <div class="cooldown-bar" id="cd-right"></div>
     </div>
   </div>
 </div>
@@ -83,81 +89,100 @@
 <script>
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
-  const hpBar = document.getElementById("hp-bar");
+  const container = document.getElementById("game-container");
+  const armorStatus = document.getElementById("armor-status");
+  const armorIcon = document.getElementById("armor-icon");
+  const armorText = document.getElementById("armor-text");
   const scoreEl = document.getElementById("score");
-  const cdQEl = document.getElementById("cd-q");
+  const cdRightEl = document.getElementById("cd-right");
 
   /* --- [게임 전역 상태] --- */
   let score = 0;
-  let mouseX = 0, mouseY = 0;
+  let mouseX = 490, mouseY = 270;
+  let keys = {};
   
-  // 플레이어 (챔피언)
+  // 플레이어 (아서 기사)
   const player = {
     x: 490, y: 270, radius: 18,
-    targetX: 490, targetY: 270,
-    speed: 4.5, hp: 100, maxHp: 100,
-    color: "#3498db"
+    speed: 4.5,
+    armor: 2, // 2: 은빛 갑옷, 1: 사각팬티, 0: 사망
+    invincible: 0, // 피격 후 무적 프레임
+    slashAngle: 0,
+    isSlashing: false
   };
 
-  // 우클릭 이동 모션 이펙트 (초록색 클릭 표식)
-  let clickMarker = { x: 0, y: 0, radius: 0, alpha: 0 };
-
-  // 투사체 (스킬 & 공격) 및 적 리스트
   let bullets = [];
   let enemies = [];
   let particles = [];
+  let tombstones = []; // 묘지 장애물
 
-  // 스킬 쿨타임 (Q)
-  let qCooldown = 0;
-  const Q_MAX_CD = 40; // 프레임 기준 (약 0.65초)
+  // 우클릭 스킬 (회전 베기) 쿨타임
+  let slashCd = 0;
+  const SLASH_MAX_CD = 90; // 약 1.5초
 
-  /* --- [입력 처리 (롤 컨트롤)] --- */
-  // 마우스 위치 추적
+  /* --- [초기 묘지 장애물 생성] --- */
+  for (let i = 0; i < 8; i++) {
+    tombstones.push({
+      x: 100 + Math.random() * 780,
+      y: 80 + Math.random() * 380,
+      width: 32, height: 48
+    });
+  }
+
+  /* --- [입력 처리 (WASD + 마우스 조준/공격)] --- */
+  window.addEventListener("keydown", (e) => { keys[e.code] = true; });
+  window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+  
   canvas.addEventListener("mousemove", (e) => {
     const rect = canvas.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
     mouseY = e.clientY - rect.top;
   });
 
-  // ★ 브라우저 우클릭 메뉴 방지 및 우클릭 이동 구현!
+  // 우클릭 메뉴 방지 및 우클릭 스킬(회전 베기) 발동
   canvas.addEventListener("contextmenu", (e) => {
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    player.targetX = e.clientX - rect.left;
-    player.targetY = e.clientY - rect.top;
-
-    // 우클릭 지점에 롤처럼 표식 애니메이션 생성
-    clickMarker = { x: player.targetX, y: player.targetY, radius: 5, alpha: 1 };
+    castSlash();
   });
 
-  // 키보드 스킬 (Q) 발동
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "q" || e.key === "Q" || e.key === "ㅂ") {
-      castSkillQ();
-    }
+  // 좌클릭 공격 (기사의 투창 던지기)
+  canvas.addEventListener("mousedown", (e) => {
+    if (e.button === 0) castLance();
   });
 
-  // 좌클릭으로도 Q 스킬 사용 가능하게 (편의성)
-  canvas.addEventListener("click", () => { castSkillQ(); });
-
-  function castSkillQ() {
-    if (qCooldown > 0) return; // 쿨타임 중이면 발동 불가
-    qCooldown = Q_MAX_CD;
-
-    // 플레이어에서 마우스 커서 방향으로 각도 계산 (논타겟팅)
+  function castLance() {
+    if (player.armor <= 0) return;
     const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
     
     bullets.push({
       x: player.x, y: player.y,
-      vx: Math.cos(angle) * 12, // 빠른 투사체 속도
-      vy: Math.sin(angle) * 12,
-      radius: 8, color: "#00ffff", range: 500, traveled: 0
+      vx: Math.cos(angle) * 14, vy: Math.sin(angle) * 14,
+      radius: 6, color: "#00e5ff", range: 550, traveled: 0
     });
   }
 
-  /* --- [적 스폰 로직] --- */
+  function castSlash() {
+    if (player.armor <= 0 || slashCd > 0) return;
+    slashCd = SLASH_MAX_CD;
+    player.isSlashing = true;
+    player.slashAngle = 0;
+
+    // 주변 360도 적 광역 타격!
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      let e = enemies[i];
+      if (Math.hypot(player.x - e.x, player.y - e.y) < 100) {
+        createParticles(e.x, e.y, "#ff3300", 15);
+        enemies.splice(i, 1);
+        score++;
+        scoreEl.innerText = score;
+      }
+    }
+    setTimeout(() => { player.isSlashing = false; }, 200);
+  }
+
+  /* --- [적 스폰 (해골 & 붉은 악마)] --- */
   function spawnEnemy() {
-    // 투기장 바깥 가장자리에서 생성
+    if (player.armor <= 0) return;
     let x, y;
     if (Math.random() < 0.5) {
       x = Math.random() < 0.5 ? -30 : canvas.width + 30;
@@ -167,60 +192,90 @@
       y = Math.random() < 0.5 ? -30 : canvas.height + 30;
     }
 
+    // 20% 확률로 빠르고 날아다니는 '레드 아리마(가고일)' 스폰
+    const isRed = Math.random() < 0.2;
     enemies.push({
-      x: x, y: y, radius: 16,
-      speed: 1.8 + Math.random() * 0.8,
-      hp: 2, color: "#e74c3c"
+      x: x, y: y, radius: isRed ? 16 : 18,
+      speed: isRed ? 3.2 : 1.6 + Math.random() * 0.6,
+      hp: isRed ? 2 : 1,
+      type: isRed ? 'gargoyle' : 'skeleton',
+      color: isRed ? "#ff2200" : "#dcdde1"
     });
   }
-  setInterval(spawnEnemy, 800); // 0.8초마다 적 스폰
+  setInterval(spawnEnemy, 600); // 0.6초마다 몹 쏟아짐!
 
-  /* --- [메인 게임 루프 (60FPS)] --- */
+  /* --- [피격 및 갑옷 파괴 시스템 (마계촌 핵심!)] --- */
+  function hitPlayer() {
+    if (player.invincible > 0 || player.armor <= 0) return;
+    
+    player.armor--;
+    player.invincible = 60; // 1초 무적
+    container.classList.add("shake");
+    setTimeout(() => container.classList.remove("shake"), 400);
+
+    createParticles(player.x, player.y, "#00e5ff", 25); // 갑옷 부서지는 파편
+
+    if (player.armor === 1) {
+      // 갑옷 파괴 -> 팬티 상태!
+      armorStatus.className = "armor-boxer";
+      armorIcon.innerText = "🩳";
+      armorText.innerText = "상태: 사각팬티! (한 대 더 맞으면 사망!)";
+    } else if (player.armor === 0) {
+      // 사망!
+      armorIcon.innerText = "💀";
+      armorText.innerText = "상태: 백골 사망...";
+      alert("마물들에게 당했습니다! 처치한 수: " + score);
+      location.reload();
+    }
+  }
+
+  /* --- [메인 게임 루프] --- */
   function update() {
-    // 1. 플레이어 우클릭 목적지로 이동
-    const dx = player.targetX - player.x;
-    const dy = player.targetY - player.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist > player.speed) {
-      player.x += (dx / dist) * player.speed;
-      player.y += (dy / dist) * player.speed;
+    if (player.armor <= 0) return;
+
+    // 1. WASD 이동
+    let dx = 0, dy = 0;
+    if (keys["KeyW"] || keys["ArrowUp"]) dy -= 1;
+    if (keys["KeyS"] || keys["ArrowDown"]) dy += 1;
+    if (keys["KeyA"] || keys["ArrowLeft"]) dx -= 1;
+    if (keys["KeyD"] || keys["ArrowRight"]) dx += 1;
+    
+    if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; } // 대각선 속도 보정
+    player.x += dx * player.speed;
+    player.y += dy * player.speed;
+
+    // 화면 이탈 방지
+    player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+    player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+
+    // 무적 프레임 및 스킬 쿨타임 감소
+    if (player.invincible > 0) player.invincible--;
+    if (slashCd > 0) {
+      slashCd--;
+      cdRightEl.style.height = ((slashCd / SLASH_MAX_CD) * 100) + "%";
     } else {
-      player.x = player.targetX;
-      player.y = player.targetY;
+      cdRightEl.style.height = "0%";
     }
 
-    // 2. Q 스킬 쿨타임 감소
-    if (qCooldown > 0) {
-      qCooldown--;
-      const pct = (qCooldown / Q_MAX_CD) * 100;
-      cdQEl.style.height = pct + "%";
-      cdQEl.innerText = (qCooldown / 60).toFixed(1);
-    } else {
-      cdQEl.style.height = "0%";
-      cdQEl.innerText = "";
-    }
-
-    // 3. 투사체 이동 및 충돌
+    // 2. 투창 이동 및 충돌
     for (let i = bullets.length - 1; i >= 0; i--) {
       let b = bullets[i];
       b.x += b.vx; b.y += b.vy;
       b.traveled += Math.hypot(b.vx, b.vy);
 
-      // 사거리 초과 시 제거
       if (b.traveled > b.range || b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
         bullets.splice(i, 1); continue;
       }
 
-      // 적과 투사체 충돌 판정
       for (let j = enemies.length - 1; j >= 0; j--) {
         let e = enemies[j];
         if (Math.hypot(b.x - e.x, b.y - e.y) < b.radius + e.radius) {
           e.hp--;
-          createParticles(e.x, e.y, "#ffcc00", 6); // 타격 파티클
+          createParticles(b.x, b.y, "#00e5ff", 5);
           bullets.splice(i, 1);
           
           if (e.hp <= 0) {
-            createParticles(e.x, e.y, "#e74c3c", 15); // 처치 파티클(피)
+            createParticles(e.x, e.y, e.color, 12);
             enemies.splice(j, 1);
             score++;
             scoreEl.innerText = score;
@@ -230,7 +285,7 @@
       }
     }
 
-    // 4. 적 이동 (플레이어 추적) 및 플레이어와 충돌
+    // 3. 적 이동 (추적) 및 플레이어 충돌
     for (let i = enemies.length - 1; i >= 0; i--) {
       let e = enemies[i];
       const edx = player.x - e.x;
@@ -242,16 +297,11 @@
 
       // 플레이어 피격!
       if (edist < player.radius + e.radius) {
-        player.hp -= 0.5;
-        hpBar.style.width = Math.max(0, player.hp) + "%";
-        if (player.hp <= 0) {
-          alert("사망했습니다! 처치한 적: " + score);
-          location.reload();
-        }
+        hitPlayer();
       }
     }
 
-    // 5. 파티클 업데이트
+    // 4. 파티클 업데이트
     for (let i = particles.length - 1; i >= 0; i--) {
       let p = particles[i];
       p.x += p.vx; p.y += p.vy;
@@ -264,42 +314,39 @@
     for (let i = 0; i < count; i++) {
       particles.push({
         x: x, y: y,
-        vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
         radius: Math.random() * 4 + 2, color: color, alpha: 1
-      } );
+      });
     }
   }
 
-  /* --- [화면 그리기 (쿼터뷰 2.5D 스타일)] --- */
+  /* --- [화면 그리기 (쿼터뷰 2.5D 마계촌 스타일)] --- */
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. 투기장 바닥 그리드 (쿼터뷰 공간감 연출)
-    ctx.strokeStyle = "#22252e";
-    ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 40) {
+    // 1. 마계 묘지 바닥 (체크무늬 타일 감성)
+    ctx.strokeStyle = "#1c1d26"; ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 50) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 40) {
+    for (let y = 0; y < canvas.height; y += 50) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
     }
 
-    // 2. 우클릭 이동 표식 (녹색 동그라미 확장이펙트)
-    if (clickMarker.alpha > 0) {
-      ctx.save();
-      ctx.strokeStyle = `rgba(46, 204, 113, ${clickMarker.alpha})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      // 타원(쿼터뷰 바닥 원)으로 그리기
-      ctx.ellipse(clickMarker.x, clickMarker.y, clickMarker.radius, clickMarker.radius * 0.6, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-      clickMarker.radius += 1.5;
-      clickMarker.alpha -= 0.05;
+    // 2. 묘지 비석 장애물 그리기
+    ctx.fillStyle = "#3e3f4c";
+    for (let t of tombstones) {
+      ctx.fillRect(t.x, t.y, t.width, t.height);
+      ctx.strokeStyle = "#1a1a24"; ctx.lineWidth = 2;
+      ctx.strokeRect(t.x, t.y, t.width, t.height);
+      // 십자가 표식
+      ctx.fillStyle = "#222";
+      ctx.fillRect(t.x + 13, t.y + 10, 6, 20);
+      ctx.fillRect(t.x + 7, t.y + 15, 18, 6);
+      ctx.fillStyle = "#3e3f4c";
     }
 
-    // 3. 쿼터뷰의 핵심: Y축 기준 정렬 (Z-Order)
-    // 아래쪽에 있는 오브젝트를 나중에 그려야 입체감이 겹쳐 보임!
+    // 3. Y축 기준 정렬 (쿼터뷰 입체감 Z-Order)
     let renderList = [
       { type: 'player', y: player.y },
       ...enemies.map(e => ({ type: 'enemy', data: e, y: e.y })),
@@ -309,60 +356,62 @@
 
     for (let item of renderList) {
       if (item.type === 'player') {
-        // 플레이어 그림자 (바닥 타원)
-        ctx.fillStyle = "rgba(0,0,0,0.5)";
-        ctx.beginPath();
-        ctx.ellipse(player.x, player.y + 14, 16, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // 무적 시간 깜빡임
+        if (player.invincible % 4 > 2) continue;
 
-        // 플레이어 몸체
-        ctx.fillStyle = player.color;
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+        // 바닥 그림자
+        ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.beginPath();
+        ctx.ellipse(player.x, player.y + 16, 18, 9, 0, 0, Math.PI * 2); ctx.fill();
 
-        // 시선 방향 (마우스를 바라보는 무기/포신)
+        // 아서 기사 몸체 (은빛 갑옷 vs 빨간 사각팬티)
+        ctx.fillStyle = player.armor === 2 ? "#00e5ff" : "#ffcc00"; // 갑옷은 하늘색 은광, 팬티는 맨살 피부색
+        ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2); ctx.fill();
+        
+        if (player.armor === 1) {
+          // 사각팬티 표현 (빨간 반바지)
+          ctx.fillStyle = "#ff3300";
+          ctx.fillRect(player.x - 12, player.y + 2, 24, 12);
+        } else {
+          ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+        }
+
+        // 마우스를 향하는 창끝 방향
         const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
-        ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(player.x, player.y);
-        ctx.lineTo(player.x + Math.cos(angle) * 26, player.y + Math.sin(angle) * 26);
-        ctx.stroke();
+        ctx.strokeStyle = player.armor === 2 ? "#fff" : "#888"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(player.x, player.y);
+        ctx.lineTo(player.x + Math.cos(angle) * 28, player.y + Math.sin(angle) * 28); ctx.stroke();
+
+        // 우클릭 회전 베기 이펙트!
+        if (player.isSlashing) {
+          ctx.strokeStyle = "rgba(255, 80, 0, 0.8)"; ctx.lineWidth = 12;
+          ctx.beginPath(); ctx.arc(player.x, player.y, 80, 0, Math.PI * 2); ctx.stroke();
+        }
 
       } else if (item.type === 'enemy') {
         let e = item.data;
-        // 적 그림자
-        ctx.fillStyle = "rgba(0,0,0,0.4)";
-        ctx.beginPath();
-        ctx.ellipse(e.x, e.y + 12, 14, 7, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath();
+        ctx.ellipse(e.x, e.y + 14, 14, 7, 0, 0, Math.PI * 2); ctx.fill();
 
-        // 적 몸체
-        ctx.fillStyle = e.color;
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#900"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = e.color; ctx.beginPath();
+        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2); ctx.fill();
+        
+        // 악마 눈동자
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(e.x - 6, e.y - 4, 4, 4);
+        ctx.fillRect(e.x + 2, e.y - 4, 4, 4);
 
       } else if (item.type === 'bullet') {
         let b = item.data;
-        ctx.fillStyle = b.color;
-        ctx.shadowColor = "#00ffff"; ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0; // 그림자 리셋
+        ctx.fillStyle = b.color; ctx.shadowColor = "#00e5ff"; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
       }
     }
 
-    // 4. 타격 파티클 그리기
+    // 4. 파티클
     for (let p of particles) {
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = Math.max(0, p.alpha);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1.0;
   }
