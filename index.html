@@ -2,62 +2,59 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Quarter-View Ghosts 'n Goblins</title>
+  <title>CHRONO SLASH - Tactical Time Control</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #08080a; color: #fff;
+      background-color: #050508; color: #fff;
       font-family: 'Malgun Gothic', sans-serif;
       display: flex; justify-content: center; align-items: center;
       height: 100vh; overflow: hidden; user-select: none;
     }
     #game-container {
       width: 980px; height: 540px; position: relative;
-      border: 4px solid #2d241e; box-shadow: 0 0 50px rgba(0,0,0,0.95);
-      background-color: #12131a; /* 마계 묘지 바닥 색 */
-      cursor: crosshair; overflow: hidden;
+      border: 3px solid #1e222a; box-shadow: 0 0 60px rgba(0, 255, 204, 0.15);
+      background-color: #0b0d13; cursor: crosshair; overflow: hidden;
     }
     canvas { display: block; width: 100%; height: 100%; }
 
-    /* 화면 진동 효과 (피격 시) */
-    .shake { animation: shake-anim 0.4s both; }
-    @keyframes shake-anim {
+    /* 화면 진동 효과 */
+    .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
       0%, 100% { transform: translate(0, 0); }
-      20%, 60% { transform: translate(-12px, 8px); }
-      40%, 80% { transform: translate(12px, -8px); }
+      20%, 60% { transform: translate(-10px, 6px); }
+      40%, 80% { transform: translate(10px, -6px); }
     }
-    
-    /* 상단 마계촌 스타일 UI */
+
+    /* 상단 상태 바 */
     #top-bar {
       position: absolute; top: 15px; left: 20px; right: 20px;
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 20px; font-weight: bold; text-shadow: 0 2px 5px #000; pointer-events: none;
+      font-size: 18px; font-weight: bold; pointer-events: none; z-index: 10;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
     }
-    #armor-status {
-      padding: 6px 15px; border-radius: 4px; background: rgba(0,0,0,0.6);
-      border: 2px solid #555; display: flex; align-items: center; gap: 10px;
+    .time-status {
+      padding: 6px 14px; border-radius: 20px; font-size: 14px;
+      background: rgba(0, 255, 204, 0.1); border: 1px solid #00ffcc; color: #00ffcc;
+      transition: all 0.1s;
     }
-    .armor-silver { color: #00e5ff; border-color: #00e5ff !important; }
-    .armor-boxer { color: #ff3300; border-color: #ff3300 !important; animation: blink 0.5s infinite; }
-    @keyframes blink { 50% { opacity: 0.5; } }
+    .time-status.fast { background: rgba(255, 50, 50, 0.2); border-color: #ff3333; color: #ff3333; }
 
-    /* 하단 무기 스킬 UI */
-    #ui-bar {
-      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 15px; z-index: 10; pointer-events: none;
+    /* 오버레이 창 */
+    .overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(5, 7, 11, 0.94); z-index: 20;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
-    .skill-box {
-      width: 64px; height: 64px; background: rgba(20,20,25,0.9);
-      border: 2px solid #665; border-radius: 6px; display: flex;
-      flex-direction: column; justify-content: center; align-items: center;
-      position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+    .hidden { display: none !important; }
+    h1 { font-size: 52px; color: #00ffcc; margin-bottom: 15px; letter-spacing: 4px; text-shadow: 0 0 20px rgba(0,255,204,0.5); }
+    p { font-size: 16px; color: #aaa; margin-bottom: 35px; text-align: center; line-height: 1.8; }
+    .btn {
+      padding: 15px 40px; font-size: 18px; font-weight: bold;
+      background: #00ffcc; color: #000; border: none; border-radius: 4px;
+      cursor: pointer; transition: 0.2s; box-shadow: 0 0 20px rgba(0,255,204,0.4);
     }
-    .skill-key { font-size: 14px; color: #ffcc00; font-weight: bold; }
-    .skill-name { font-size: 11px; color: #ccc; margin-top: 2px; }
-    .cooldown-bar {
-      position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-      background: rgba(255, 50, 0, 0.7); transition: height 0.05s linear;
-    }
+    .btn:hover { background: #66ffdf; transform: scale(1.05); }
   </style>
 </head>
 <body>
@@ -66,349 +63,369 @@
   <canvas id="gameCanvas" width="980" height="540"></canvas>
   
   <div id="top-bar">
-    <div id="armor-status" class="armor-silver">
-      <span id="armor-icon">🛡️</span>
-      <span id="armor-text">상태: 은빛 갑옷 (피격 1회 보호)</span>
-    </div>
-    <div>💀 처치한 마물: <span id="score" style="color:#ffcc00;">0</span></div>
+    <div>❤️ HP: <span id="hp-val" style="color:#ff3333;">3</span> / 3</div>
+    <div id="time-badge" class="time-status">⏳ SLOW MOTION (시간 정지 중)</div>
+    <div>💀 처치: <span id="score" style="color:#00ffcc;">0</span></div>
   </div>
 
-  <div id="ui-bar">
-    <div class="skill-box">
-      <div class="skill-key">좌클릭</div>
-      <div class="skill-name">기사의 투창</div>
-    </div>
-    <div class="skill-box" style="border-color:#ff5500;">
-      <div class="skill-key" style="color:#ff5500;">우클릭</div>
-      <div class="skill-name">회전 대검</div>
-      <div class="cooldown-bar" id="cd-right"></div>
-    </div>
+  <div id="start-screen" class="overlay">
+    <h1>CHRONO SLASH</h1>
+    <p>
+      <b>⏳ [핵심 규칙] 당신이 멈추면, 시간도 멈춥니다!</b><br><br>
+      • 키보드와 마우스에서 손을 떼면 세상이 <b>0.05배속(초슬로 모션)</b>으로 멈춥니다.<br>
+      • 공중에 멈춘 적들의 화살을 눈으로 보고, 틈새로 우아하게 피하세요.<br>
+      • <b>[WASD]</b> 이동 &nbsp;|&nbsp; <b>[마우스 좌클릭]</b> 참격 투척 (움직일 때 시간 흐름)<br>
+      • <b>[마우스 우클릭]</b> 무적 순간 이동 (대쉬 베기!)
+    </p>
+    <button class="btn" onclick="startGame()">시간 지배 시작 (게임 시작)</button>
+  </div>
+
+  <div id="end-screen" class="overlay hidden">
+    <h1 id="end-title" style="color:#ff3333;">GAME OVER</h1>
+    <p id="end-desc">시간의 흐름을 읽지 못해 치명상을 입었습니다.</p>
+    <button class="btn" onclick="startGame()">다시 도전하기</button>
   </div>
 </div>
 
 <script>
+  /* =========================================================
+     ★ Web Audio API (사운드와 타임스케일의 실시간 동기화) ★
+     ========================================================= */
+  let audioCtx = null, bgmOsc = null, bgmFilter = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    if (!bgmOsc) {
+      bgmOsc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      bgmFilter = audioCtx.createBiquadFilter();
+      
+      bgmOsc.type = 'sawtooth';
+      bgmOsc.frequency.value = 55; // 저주파 사이버펑크 베이스
+      
+      bgmFilter.type = 'lowpass';
+      bgmFilter.frequency.value = 200; // 초기에는 멈춰있으니 먹먹한 소리
+      
+      gain.gain.value = 0.15;
+      bgmOsc.connect(bgmFilter);
+      bgmFilter.connect(gain);
+      gain.connect(audioCtx.destination);
+      bgmOsc.start();
+    }
+  }
+
+  // 타임스케일에 따라 BGM의 오디오 필터를 변조 (시간이 흐르면 선명해짐!)
+  function updateAudioTimeScale(scale) {
+    if (bgmFilter && audioCtx) {
+      bgmFilter.frequency.setTargetAtTime(150 + scale * 2500, audioCtx.currentTime, 0.1);
+    }
+  }
+
+  function playSound(type) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    if (type === 'shoot') {
+      osc.type = 'square'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    } else if (type === 'hit') {
+      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    } else if (type === 'dash') {
+      osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    }
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+  }
+
+  /* =========================================================
+     ★ 메인 게임 엔진 (SUPERHOT Time Control Mechanics) ★
+     ========================================================= */
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
   const container = document.getElementById("game-container");
-  const armorStatus = document.getElementById("armor-status");
-  const armorIcon = document.getElementById("armor-icon");
-  const armorText = document.getElementById("armor-text");
+  const timeBadge = document.getElementById("time-badge");
+  const hpVal = document.getElementById("hp-val");
   const scoreEl = document.getElementById("score");
-  const cdRightEl = document.getElementById("cd-right");
 
-  /* --- [게임 전역 상태] --- */
-  let score = 0;
-  let mouseX = 490, mouseY = 270;
-  let keys = {};
+  let gameActive = false, score = 0;
+  let timeScale = 0.05; // ★ 핵심: 현재 시간 속도 (0.05 = 정지, 1.0 = 정상)
+  let targetTimeScale = 0.05;
+  let hitStopFrames = 0; // 타격감 극대화를 위한 역경직
+
+  let keys = {}, mouseX = 490, mouseY = 270, isMouseDown = false;
   
-  // 플레이어 (아서 기사)
-  const player = {
-    x: 490, y: 270, radius: 18,
-    speed: 4.5,
-    armor: 2, // 2: 은빛 갑옷, 1: 사각팬티, 0: 사망
-    invincible: 0, // 피격 후 무적 프레임
-    slashAngle: 0,
-    isSlashing: false
-  };
+  const player = { x: 490, y: 270, radius: 16, speed: 4.5, hp: 3, dashCd: 0 };
+  let bullets = [], enemies = [], enemyArrows = [], particles = [], afterimages = [];
 
-  let bullets = [];
-  let enemies = [];
-  let particles = [];
-  let tombstones = []; // 묘지 장애물
-
-  // 우클릭 스킬 (회전 베기) 쿨타임
-  let slashCd = 0;
-  const SLASH_MAX_CD = 90; // 약 1.5초
-
-  /* --- [초기 묘지 장애물 생성] --- */
-  for (let i = 0; i < 8; i++) {
-    tombstones.push({
-      x: 100 + Math.random() * 780,
-      y: 80 + Math.random() * 380,
-      width: 32, height: 48
-    });
-  }
-
-  /* --- [입력 처리 (WASD + 마우스 조준/공격)] --- */
-  window.addEventListener("keydown", (e) => { keys[e.code] = true; });
-  window.addEventListener("keyup", (e) => { keys[e.code] = false; });
-  
-  canvas.addEventListener("mousemove", (e) => {
+  window.addEventListener("keydown", e => keys[e.code] = true);
+  window.addEventListener("keyup", e => keys[e.code] = false);
+  canvas.addEventListener("mousemove", e => {
     const rect = canvas.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
+    mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
   });
-
-  // 우클릭 메뉴 방지 및 우클릭 스킬(회전 베기) 발동
-  canvas.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    castSlash();
+  canvas.addEventListener("mousedown", e => {
+    if (e.button === 0) { isMouseDown = true; shoot(); }
   });
+  canvas.addEventListener("mouseup", e => { if (e.button === 0) isMouseDown = false; });
+  canvas.addEventListener("contextmenu", e => { e.preventDefault(); dashSlash(); });
 
-  // 좌클릭 공격 (기사의 투창 던지기)
-  canvas.addEventListener("mousedown", (e) => {
-    if (e.button === 0) castLance();
-  });
-
-  function castLance() {
-    if (player.armor <= 0) return;
+  function shoot() {
+    if (!gameActive) return;
     const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
-    
     bullets.push({
-      x: player.x, y: player.y,
-      vx: Math.cos(angle) * 14, vy: Math.sin(angle) * 14,
-      radius: 6, color: "#00e5ff", range: 550, traveled: 0
+      x: player.x, y: player.y, vx: Math.cos(angle) * 16, vy: Math.sin(angle) * 16,
+      radius: 6, color: "#00ffcc", range: 600, traveled: 0
     });
+    playSound('shoot');
+    targetTimeScale = 1.0; // 공격 시 시간 흐름
   }
 
-  function castSlash() {
-    if (player.armor <= 0 || slashCd > 0) return;
-    slashCd = SLASH_MAX_CD;
-    player.isSlashing = true;
-    player.slashAngle = 0;
+  // 우클릭 순간이동 대쉬 베기
+  function dashSlash() {
+    if (!gameActive || player.dashCd > 0) return;
+    player.dashCd = 60; // 1초 쿨타임
+    playSound('dash');
 
-    // 주변 360도 적 광역 타격!
+    const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+    const dist = Math.min(200, Math.hypot(mouseX - player.x, mouseY - player.y));
+    const nextX = Math.max(20, Math.min(canvas.width - 20, player.x + Math.cos(angle) * dist));
+    const nextY = Math.max(20, Math.min(canvas.height - 20, player.y + Math.sin(angle) * dist));
+
+    // 대쉬 경로에 있는 모든 적 즉사 베기!
     for (let i = enemies.length - 1; i >= 0; i--) {
       let e = enemies[i];
-      if (Math.hypot(player.x - e.x, player.y - e.y) < 100) {
-        createParticles(e.x, e.y, "#ff3300", 15);
-        enemies.splice(i, 1);
-        score++;
-        scoreEl.innerText = score;
+      // 선분 충돌 간이 계산
+      if (Math.hypot((player.x + nextX)/2 - e.x, (player.y + nextY)/2 - e.y) < dist/2 + 20) {
+        killEnemy(i, e.x, e.y);
       }
     }
-    setTimeout(() => { player.isSlashing = false; }, 200);
+    
+    // 잔영 효과
+    afterimages.push({ x: player.x, y: player.y, alpha: 0.8 });
+    player.x = nextX; player.y = nextY;
+    container.classList.add("shake");
+    setTimeout(() => container.classList.remove("shake"), 200);
   }
 
-  /* --- [적 스폰 (해골 & 붉은 악마)] --- */
   function spawnEnemy() {
-    if (player.armor <= 0) return;
+    if (!gameActive) return;
     let x, y;
     if (Math.random() < 0.5) {
-      x = Math.random() < 0.5 ? -30 : canvas.width + 30;
-      y = Math.random() * canvas.height;
+      x = Math.random() < 0.5 ? -30 : canvas.width + 30; y = Math.random() * canvas.height;
     } else {
-      x = Math.random() * canvas.width;
-      y = Math.random() < 0.5 ? -30 : canvas.height + 30;
+      x = Math.random() * canvas.width; y = Math.random() < 0.5 ? -30 : canvas.height + 30;
     }
 
-    // 20% 확률로 빠르고 날아다니는 '레드 아리마(가고일)' 스폰
-    const isRed = Math.random() < 0.2;
+    const isArcher = Math.random() < 0.4; // 40% 확률로 궁수 스폰
     enemies.push({
-      x: x, y: y, radius: isRed ? 16 : 18,
-      speed: isRed ? 3.2 : 1.6 + Math.random() * 0.6,
-      hp: isRed ? 2 : 1,
-      type: isRed ? 'gargoyle' : 'skeleton',
-      color: isRed ? "#ff2200" : "#dcdde1"
+      x: x, y: y, radius: isArcher ? 15 : 18,
+      speed: isArcher ? 1.5 : 2.5,
+      type: isArcher ? 'archer' : 'melee',
+      color: isArcher ? "#ff9900" : "#ff3333",
+      shootTimer: Math.random() * 60 + 60
     });
   }
-  setInterval(spawnEnemy, 600); // 0.6초마다 몹 쏟아짐!
+  setInterval(spawnEnemy, 1000);
 
-  /* --- [피격 및 갑옷 파괴 시스템 (마계촌 핵심!)] --- */
-  function hitPlayer() {
-    if (player.invincible > 0 || player.armor <= 0) return;
+  function killEnemy(index, x, y) {
+    createParticles(x, y, "#ff3333", 20);
+    enemies.splice(index, 1);
+    score++; scoreEl.innerText = score;
+    playSound('hit');
     
-    player.armor--;
-    player.invincible = 60; // 1초 무적
+    // ★ 타격감 핵심: 적이 죽을 때 화면 3프레임 정지 (Hit-stop)
+    hitStopFrames = 3;
     container.classList.add("shake");
-    setTimeout(() => container.classList.remove("shake"), 400);
-
-    createParticles(player.x, player.y, "#00e5ff", 25); // 갑옷 부서지는 파편
-
-    if (player.armor === 1) {
-      // 갑옷 파괴 -> 팬티 상태!
-      armorStatus.className = "armor-boxer";
-      armorIcon.innerText = "🩳";
-      armorText.innerText = "상태: 사각팬티! (한 대 더 맞으면 사망!)";
-    } else if (player.armor === 0) {
-      // 사망!
-      armorIcon.innerText = "💀";
-      armorText.innerText = "상태: 백골 사망...";
-      alert("마물들에게 당했습니다! 처치한 수: " + score);
-      location.reload();
-    }
+    setTimeout(() => container.classList.remove("shake"), 150);
   }
 
-  /* --- [메인 게임 루프] --- */
+  /* --- [메인 업데이트 루프] --- */
   function update() {
-    if (player.armor <= 0) return;
+    if (!gameActive) return;
+    
+    // 타격 정지(Hit-stop) 중이면 프레임 스킵
+    if (hitStopFrames > 0) { hitStopFrames--; return; }
 
-    // 1. WASD 이동
+    // 1. WASD 이동 및 타임스케일 제어 로직
     let dx = 0, dy = 0;
     if (keys["KeyW"] || keys["ArrowUp"]) dy -= 1;
     if (keys["KeyS"] || keys["ArrowDown"]) dy += 1;
     if (keys["KeyA"] || keys["ArrowLeft"]) dx -= 1;
     if (keys["KeyD"] || keys["ArrowRight"]) dx += 1;
-    
-    if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; } // 대각선 속도 보정
-    player.x += dx * player.speed;
-    player.y += dy * player.speed;
 
-    // 화면 이탈 방지
-    player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
-    player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
-
-    // 무적 프레임 및 스킬 쿨타임 감소
-    if (player.invincible > 0) player.invincible--;
-    if (slashCd > 0) {
-      slashCd--;
-      cdRightEl.style.height = ((slashCd / SLASH_MAX_CD) * 100) + "%";
+    // ★ 플레이어가 움직이거나 마우스를 누르고 있으면 시간 속도 100%, 아니면 5% 초슬로!
+    if (dx !== 0 || dy !== 0 || isMouseDown) {
+      targetTimeScale = 1.0;
+      if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+      player.x += dx * player.speed; player.y += dy * player.speed;
+      player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+      player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
     } else {
-      cdRightEl.style.height = "0%";
+      targetTimeScale = 0.05; // 멈춤
     }
 
-    // 2. 투창 이동 및 충돌
+    // 부드러운 시간 전환 (Lerp)
+    timeScale += (targetTimeScale - timeScale) * 0.15;
+    updateAudioTimeScale(timeScale); // BGM 필터 동기화
+
+    // UI 배지 업데이트
+    if (timeScale > 0.4) {
+      timeBadge.innerText = "⚡ REAL TIME (시간 흐르는 중!)";
+      timeBadge.className = "time-status fast";
+    } else {
+      timeBadge.innerText = "⏳ SLOW MOTION (시간 정지 중)";
+      timeBadge.className = "time-status";
+    }
+
+    if (player.dashCd > 0) player.dashCd--;
+
+    // 2. 투사체 이동 (플레이어 탄)
     for (let i = bullets.length - 1; i >= 0; i--) {
       let b = bullets[i];
-      b.x += b.vx; b.y += b.vy;
-      b.traveled += Math.hypot(b.vx, b.vy);
-
-      if (b.traveled > b.range || b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+      b.x += b.vx * timeScale; b.y += b.vy * timeScale;
+      b.traveled += Math.hypot(b.vx, b.vy) * timeScale;
+      if (b.traveled > b.range || b.x<0 || b.x>canvas.width || b.y<0 || b.y>canvas.height) {
         bullets.splice(i, 1); continue;
       }
-
       for (let j = enemies.length - 1; j >= 0; j--) {
         let e = enemies[j];
         if (Math.hypot(b.x - e.x, b.y - e.y) < b.radius + e.radius) {
-          e.hp--;
-          createParticles(b.x, b.y, "#00e5ff", 5);
-          bullets.splice(i, 1);
-          
-          if (e.hp <= 0) {
-            createParticles(e.x, e.y, e.color, 12);
-            enemies.splice(j, 1);
-            score++;
-            scoreEl.innerText = score;
-          }
-          break;
+          killEnemy(j, e.x, e.y);
+          bullets.splice(i, 1); break;
         }
       }
     }
 
-    // 3. 적 이동 (추적) 및 플레이어 충돌
+    // 3. 적 이동 & 화살 발사 (모든 행동에 timeScale 곱함!)
     for (let i = enemies.length - 1; i >= 0; i--) {
       let e = enemies[i];
-      const edx = player.x - e.x;
-      const edy = player.y - e.y;
+      const edx = player.x - e.x, edy = player.y - e.y;
       const edist = Math.hypot(edx, edy);
 
-      e.x += (edx / edist) * e.speed;
-      e.y += (edy / edist) * e.speed;
+      if (e.type === 'melee' || edist > 250) {
+        e.x += (edx / edist) * e.speed * timeScale;
+        e.y += (edy / edist) * e.speed * timeScale;
+      }
 
-      // 플레이어 피격!
-      if (edist < player.radius + e.radius) {
-        hitPlayer();
+      // 궁수 화살 발사
+      if (e.type === 'archer') {
+        e.shootTimer -= 1 * timeScale;
+        if (e.shootTimer <= 0) {
+          e.shootTimer = 90;
+          const angle = Math.atan2(edy, edx);
+          enemyArrows.push({
+            x: e.x, y: e.y, vx: Math.cos(angle) * 7, vy: Math.sin(angle) * 7, radius: 5
+          });
+        }
+      }
+
+      // 근접 적 피격
+      if (edist < player.radius + e.radius) { hitPlayer(); }
+    }
+
+    // 4. 적 화살 이동 및 피격
+    for (let i = enemyArrows.length - 1; i >= 0; i--) {
+      let a = enemyArrows[i];
+      a.x += a.vx * timeScale; a.y += a.vy * timeScale;
+      if (a.x<0 || a.x>canvas.width || a.y<0 || a.y>canvas.height) {
+        enemyArrows.splice(i, 1); continue;
+      }
+      if (Math.hypot(a.x - player.x, a.y - player.y) < player.radius + a.radius) {
+        hitPlayer(); enemyArrows.splice(i, 1);
       }
     }
 
-    // 4. 파티클 업데이트
+    // 5. 파티클 & 잔영
     for (let i = particles.length - 1; i >= 0; i--) {
       let p = particles[i];
-      p.x += p.vx; p.y += p.vy;
-      p.alpha -= 0.04;
+      p.x += p.vx * timeScale; p.y += p.vy * timeScale;
+      p.alpha -= 0.03 * timeScale;
       if (p.alpha <= 0) particles.splice(i, 1);
+    }
+    for (let i = afterimages.length - 1; i >= 0; i--) {
+      afterimages[i].alpha -= 0.05 * timeScale;
+      if (afterimages[i].alpha <= 0) afterimages.splice(i, 1);
+    }
+  }
+
+  function hitPlayer() {
+    player.hp--;
+    hpVal.innerText = player.hp;
+    container.classList.add("shake");
+    setTimeout(() => container.classList.remove("shake"), 300);
+    if (player.hp <= 0) {
+      gameActive = false;
+      document.getElementById("end-screen").classList.remove("hidden");
     }
   }
 
   function createParticles(x, y, color, count) {
     for (let i = 0; i < count; i++) {
       particles.push({
-        x: x, y: y,
-        vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
-        radius: Math.random() * 4 + 2, color: color, alpha: 1
+        x: x, y: y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12,
+        radius: Math.random() * 4 + 1, color: color, alpha: 1
       });
     }
   }
 
-  /* --- [화면 그리기 (쿼터뷰 2.5D 마계촌 스타일)] --- */
+  /* --- [화면 그리기 (네온 사이버/다크 판타지)] --- */
   function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 배경 (시간이 멈추면 푸른빛 잔영, 흐르면 또렷하게)
+    ctx.fillStyle = timeScale < 0.3 ? "rgba(11, 13, 19, 0.4)" : "#0b0d13";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 1. 마계 묘지 바닥 (체크무늬 타일 감성)
-    ctx.strokeStyle = "#1c1d26"; ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 50) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-    }
-    for (let y = 0; y < canvas.height; y += 50) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-    }
+    // 바닥 격자 (슬로 모션일 때 미세하게 진동하는 효과)
+    ctx.strokeStyle = timeScale < 0.3 ? "#131a26" : "#1a2333";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+    for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
 
-    // 2. 묘지 비석 장애물 그리기
-    ctx.fillStyle = "#3e3f4c";
-    for (let t of tombstones) {
-      ctx.fillRect(t.x, t.y, t.width, t.height);
-      ctx.strokeStyle = "#1a1a24"; ctx.lineWidth = 2;
-      ctx.strokeRect(t.x, t.y, t.width, t.height);
-      // 십자가 표식
-      ctx.fillStyle = "#222";
-      ctx.fillRect(t.x + 13, t.y + 10, 6, 20);
-      ctx.fillRect(t.x + 7, t.y + 15, 18, 6);
-      ctx.fillStyle = "#3e3f4c";
+    // 잔영 그리기
+    for (let img of afterimages) {
+      ctx.fillStyle = `rgba(0, 255, 204, ${img.alpha})`;
+      ctx.beginPath(); ctx.arc(img.x, img.y, player.radius, 0, Math.PI * 2); ctx.fill();
     }
 
-    // 3. Y축 기준 정렬 (쿼터뷰 입체감 Z-Order)
-    let renderList = [
-      { type: 'player', y: player.y },
-      ...enemies.map(e => ({ type: 'enemy', data: e, y: e.y })),
-      ...bullets.map(b => ({ type: 'bullet', data: b, y: b.y }))
-    ];
-    renderList.sort((a, b) => a.y - b.y);
+    // 플레이어
+    ctx.fillStyle = "#00ffcc"; ctx.shadowColor = "#00ffcc"; ctx.shadowBlur = 15;
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // 시선 방향
+    const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x + Math.cos(angle) * 26, player.y + Math.sin(angle) * 26); ctx.stroke();
 
-    for (let item of renderList) {
-      if (item.type === 'player') {
-        // 무적 시간 깜빡임
-        if (player.invincible % 4 > 2) continue;
-
-        // 바닥 그림자
-        ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.beginPath();
-        ctx.ellipse(player.x, player.y + 16, 18, 9, 0, 0, Math.PI * 2); ctx.fill();
-
-        // 아서 기사 몸체 (은빛 갑옷 vs 빨간 사각팬티)
-        ctx.fillStyle = player.armor === 2 ? "#00e5ff" : "#ffcc00"; // 갑옷은 하늘색 은광, 팬티는 맨살 피부색
-        ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2); ctx.fill();
-        
-        if (player.armor === 1) {
-          // 사각팬티 표현 (빨간 반바지)
-          ctx.fillStyle = "#ff3300";
-          ctx.fillRect(player.x - 12, player.y + 2, 24, 12);
-        } else {
-          ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
-        }
-
-        // 마우스를 향하는 창끝 방향
-        const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
-        ctx.strokeStyle = player.armor === 2 ? "#fff" : "#888"; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(player.x, player.y);
-        ctx.lineTo(player.x + Math.cos(angle) * 28, player.y + Math.sin(angle) * 28); ctx.stroke();
-
-        // 우클릭 회전 베기 이펙트!
-        if (player.isSlashing) {
-          ctx.strokeStyle = "rgba(255, 80, 0, 0.8)"; ctx.lineWidth = 12;
-          ctx.beginPath(); ctx.arc(player.x, player.y, 80, 0, Math.PI * 2); ctx.stroke();
-        }
-
-      } else if (item.type === 'enemy') {
-        let e = item.data;
-        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath();
-        ctx.ellipse(e.x, e.y + 14, 14, 7, 0, 0, Math.PI * 2); ctx.fill();
-
-        ctx.fillStyle = e.color; ctx.beginPath();
-        ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2); ctx.fill();
-        
-        // 악마 눈동자
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(e.x - 6, e.y - 4, 4, 4);
-        ctx.fillRect(e.x + 2, e.y - 4, 4, 4);
-
-      } else if (item.type === 'bullet') {
-        let b = item.data;
-        ctx.fillStyle = b.color; ctx.shadowColor = "#00e5ff"; ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
-      }
+    // 적 (근접: 빨강, 궁수: 주황)
+    for (let e of enemies) {
+      ctx.fillStyle = e.color; ctx.shadowColor = e.color; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
     }
 
-    // 4. 파티클
+    // 플레이어 탄
+    ctx.fillStyle = "#00ffcc"; ctx.shadowColor = "#00ffcc"; ctx.shadowBlur = 8;
+    for (let b of bullets) { ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill(); }
+    ctx.shadowBlur = 0;
+
+    // ★ 적 화살 (슬로 모션일 때 공중에 정지된 궤적을 선명하게 보여줌!)
+    ctx.fillStyle = "#ff3333"; ctx.strokeStyle = "#ff9999"; ctx.lineWidth = 2;
+    for (let a of enemyArrows) {
+      ctx.beginPath(); ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(a.x - a.vx*2, a.y - a.vy*2); ctx.stroke();
+    }
+
+    // 파티클
     for (let p of particles) {
       ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.alpha);
       ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
@@ -417,11 +434,19 @@
   }
 
   function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
+    update(); draw(); requestAnimationFrame(loop);
   }
   loop();
+
+  function startGame() {
+    initAudio();
+    enemies = []; bullets = []; enemyArrows = []; particles = [];
+    player.hp = 3; score = 0; scoreEl.innerText = "0";
+    hpVal.innerText = "3";
+    document.getElementById("start-screen").classList.add("hidden");
+    document.getElementById("end-screen").classList.add("hidden");
+    gameActive = true;
+  }
 </script>
 </body>
 </html>
